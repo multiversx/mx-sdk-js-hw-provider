@@ -12,7 +12,7 @@ import { IProvider } from "../interface";
 import { Transaction } from "../transaction";
 import { Address } from "../address";
 import { Signature } from "../signature";
-import { compareVersions } from "../versioning";
+import { compareVersions } from "./versioning";
 import { LEDGER_TX_HASH_SIGN_MIN_VERSION } from "./constants";
 import {TransactionOptions, TransactionVersion} from "../networkParams";
 import {SignableMessage} from "../signableMessage";
