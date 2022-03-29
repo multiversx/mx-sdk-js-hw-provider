@@ -1,0 +1,66 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>HW provider example</title>
+</head>
+
+<body>
+    <div>
+        <button onclick="main()">Run example</button>
+    </div>
+
+    <script src="../out-examples/lib.js"></script>
+    <script>
+        function DummyTransaction() {
+            // These will be set by hwProvider before calling serializeForSigning().
+            this.version = {};
+            this.options = {};
+
+            this.serializeForSigning = function(signedBy) {
+                console.log("DummyTransaction.serializeForSigning()", signedBy.bech32());
+                console.log("Transaction version", this.version);
+                console.log("Transaction options", this.options);
+
+                let json = JSON.stringify({
+                    nonce: 0,
+                    value: "1",
+                    receiver: "erd1uv40ahysflse896x4ktnh6ecx43u7cmy9wnxnvcyp7deg299a4sq6vaywa",
+                    sender: signedBy.bech32(),
+                    gasPrice: 1000000000,
+                    gasLimit: 50000,
+                    data: btoa("hello"),
+                    chainID: "1",
+                    version: this.version.valueOf(),
+                    options: this.options.valueOf()
+                });
+
+                console.log("Serialized transaction:");
+                console.log(json);
+                return json;
+            };
+
+            this.applySignature = function(signature, signedBy) {
+                console.log("DummyTransaction.applySignature()", signature.hex(), signedBy.bech32());
+            }
+        }
+
+        async function main() {
+            var provider = new lib.HWProvider();
+            await provider.init();
+            await provider.login({ addressIndex: 0 });
+            let addresses = await provider.getAccounts();
+            let currentAddress = await provider.getAddress();
+
+            console.log("Addresses:", addresses);
+            console.log("Current address:", currentAddress);
+
+            let transaction = new DummyTransaction();
+            await provider.signTransaction(transaction);
+            
+            console.log("Done!");
+        }
+    </script>
+</body>
+
+</html>

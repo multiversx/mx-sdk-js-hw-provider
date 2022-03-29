@@ -7,23 +7,19 @@ import AppElrond from "@elrondnetwork/hw-app-elrond";
 import platform from "platform";
 import Transport, { Descriptor } from "ledgerhq__hw-transport";
 
-import { IDappProvider, IHWElrondApp, IHWProvider } from "./interface";
-import { IProvider } from "../interface";
-import { Transaction } from "../transaction";
-import { Address } from "../address";
-import { Signature } from "../signature";
-import { compareVersions } from "../versioning";
+import { IHWElrondApp, IHWProvider, ISignature, ITransaction, ISignableMessage } from "./interface";
+import { compareVersions } from "./versioning";
 import { LEDGER_TX_HASH_SIGN_MIN_VERSION } from "./constants";
-import {TransactionOptions, TransactionVersion} from "../networkParams";
-import {SignableMessage} from "../signableMessage";
+import { Signature } from "./signature";
+import { UserAddress } from "./userAddress";
+import { TransactionVersion } from "./transactionVersion";
+import { TransactionOptions } from "./transactionOptions";
 
 export class HWProvider implements IHWProvider {
-    provider: IProvider;
     hwApp?: IHWElrondApp;
     addressIndex: number = 0;
 
-    constructor(httpProvider: IProvider) {
-        this.provider = httpProvider;
+    constructor() {
     }
 
     /**
@@ -122,39 +118,30 @@ export class HWProvider implements IHWProvider {
         return this.getCurrentAddress();
     }
 
-    /**
-     * Signs and sends a transaction. Returns the transaction hash
-     * @param transaction
-     */
-    async sendTransaction(transaction: Transaction): Promise<Transaction> {
-        transaction = await this.signTransaction(transaction);
-        await transaction.send(this.provider);
-
-        return transaction;
-    }
-
-    async signTransaction(transaction: Transaction): Promise<Transaction> {
+    async signTransaction(transaction: ITransaction): Promise<ITransaction> {
         if (!this.hwApp) {
             throw new Error("HWApp not initialised, call init() first");
         }
 
-        const address = await this.getCurrentAddress();
+        const currentAddressBech32 = await this.getCurrentAddress();
+        const currentAddress = new UserAddress(currentAddressBech32);
+
         let signUsingHash = await this.shouldSignUsingHash();
         if(signUsingHash) {
             transaction.options = TransactionOptions.withTxHashSignOptions();
             transaction.version = TransactionVersion.withTxHashSignVersion();
         }
-        const sig = await this.hwApp.signTransaction(
-          transaction.serializeForSigning(new Address(address)),
-          signUsingHash
-        );
-        transaction.applySignature(new Signature(sig), new Address(address));
+
+        let serializedTransaction = transaction.serializeForSigning(currentAddress);
+        let serializedTransactionBuffer = Buffer.from(serializedTransaction);
+        const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, signUsingHash);
+        transaction.applySignature(Signature.fromHex(signature), currentAddress);
 
         return transaction;
     }
 
-    async signTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-        let retTx: Transaction[] = [];
+    async signTransactions(transactions: ITransaction[]): Promise<ITransaction[]> {
+        let retTx: ITransaction[] = [];
         for (let tx of transactions) {
             retTx.push(await this.signTransaction(tx));
         }
@@ -162,18 +149,20 @@ export class HWProvider implements IHWProvider {
         return retTx;
     }
 
-    async signMessage(message: SignableMessage): Promise<SignableMessage> {
+    async signMessage(message: ISignableMessage): Promise<ISignableMessage> {
         if (!this.hwApp) {
             throw new Error("HWApp not initialised, call init() first");
         }
 
-        const signature = await this.hwApp.signMessage(message.serializeForSigningRaw());
-        message.applySignature(new Signature(signature));
+        let serializedMessage = message.serializeForSigningRaw();
+        let serializedMessageBuffer = Buffer.from(serializedMessage);
+        const signature = await this.hwApp.signMessage(serializedMessageBuffer);
+        message.applySignature(Signature.fromHex(signature));
 
         return message;
     }
 
-    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: Signature; address: string}> {
+    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: ISignature; address: string}> {
         if (!this.hwApp) {
             throw new Error("HWApp not initialised, call init() first");
         }
@@ -187,7 +176,7 @@ export class HWProvider implements IHWProvider {
         const { signature, address } = await this.hwApp.getAddressAndSignAuthToken(0, this.addressIndex, options.token);
 
         return {
-            signature: new Signature(signature),
+            signature: Signature.fromHex(signature),
             address
         };
     }
