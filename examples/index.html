@@ -6,8 +6,11 @@
 </head>
 
 <body>
-    <script src="../out-examples/lib.js"></script>
+    <div>
+        <button onclick="main()">Run example</button>
+    </div>
 
+    <script src="../out-examples/lib.js"></script>
     <script>
         function DummyTransaction() {
             // These will be set by hwProvider before calling serializeForSigning().
@@ -54,11 +57,9 @@
 
             let transaction = new DummyTransaction();
             await provider.signTransaction(transaction);
-        }
-
-        main().then(function() {
+            
             console.log("Done!");
-        });
+        }
     </script>
 </body>
 
