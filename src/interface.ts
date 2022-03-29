@@ -58,12 +58,12 @@ export interface ITransaction {
     version: ITransactionVersion;
     options: ITransactionOptions;
     
-    serializeForSigning(signedBy: IAddress): Buffer;
+    serializeForSigning(signedBy: IAddress): Buffer | string;
     applySignature(signature: ISignature, signedBy: IAddress): void;
 }
 
 export interface ISignableMessage {
-    serializeForSigningRaw(): Buffer;
+    serializeForSigningRaw(): Buffer | string;
     applySignature(signature: ISignature): void;
 }
 

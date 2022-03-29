@@ -131,10 +131,10 @@ export class HWProvider implements IHWProvider {
             transaction.options = TransactionOptions.withTxHashSignOptions();
             transaction.version = TransactionVersion.withTxHashSignVersion();
         }
-        const signature = await this.hwApp.signTransaction(
-          transaction.serializeForSigning(currentAddress),
-          signUsingHash
-        );
+
+        let serializedTransaction = transaction.serializeForSigning(currentAddress);
+        let serializedTransactionBuffer = Buffer.from(serializedTransaction);
+        const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, signUsingHash);
         transaction.applySignature(Signature.fromHex(signature), currentAddress);
 
         return transaction;
@@ -154,7 +154,9 @@ export class HWProvider implements IHWProvider {
             throw new Error("HWApp not initialised, call init() first");
         }
 
-        const signature = await this.hwApp.signMessage(message.serializeForSigningRaw());
+        let serializedMessage = message.serializeForSigningRaw();
+        let serializedMessageBuffer = Buffer.from(serializedMessage);
+        const signature = await this.hwApp.signMessage(serializedMessageBuffer);
         message.applySignature(Signature.fromHex(signature));
 
         return message;
