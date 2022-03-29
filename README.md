@@ -23,7 +23,6 @@ npm install
 npm run compile
 ```
 
-
 ### Running the examples
 
 Make sure you have the package `http-server` installed globally.
