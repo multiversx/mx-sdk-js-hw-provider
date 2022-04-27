@@ -7,7 +7,7 @@ import AppElrond from "@elrondnetwork/hw-app-elrond";
 import platform from "platform";
 import Transport, { Descriptor } from "ledgerhq__hw-transport";
 
-import { IHWElrondApp, IHWProvider, ISignature, ITransaction, ISignableMessage } from "./interface";
+import { IHWElrondApp, ISignature, ITransaction, ISignableMessage } from "./interface";
 import { compareVersions } from "./versioning";
 import { LEDGER_TX_HASH_SIGN_MIN_VERSION } from "./constants";
 import { Signature } from "./signature";
@@ -16,7 +16,7 @@ import { TransactionVersion } from "./transactionVersion";
 import { TransactionOptions } from "./transactionOptions";
 import { ErrNotInitialized } from "./errors";
 
-export class HWProvider implements IHWProvider {
+export class HWProvider {
     hwApp?: IHWElrondApp;
     addressIndex: number = 0;
 
