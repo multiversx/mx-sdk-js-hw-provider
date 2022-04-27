@@ -3,21 +3,74 @@
 <head>
     <meta charset="utf-8">
     <title>HW provider example</title>
+    <style>
+        button {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 
 <body>
     <div>
-        <button onclick="main()">Run example</button>
+        <button onclick="init()">Initialize</button>
+    </div>
+    <div>
+        <input value="0" type="number" min="0" name="addressIndexForLogin" />
+        <button onclick="login()">Login</button>
+    </div>
+    <div>
+        <input value="0" type="number" min="0" name="addressIndexForSetAddress" />
+        <button onclick="setAddress()">Set address index</button>
+    </div>
+    <div>
+        <button onclick="signTransaction()">Sign transaction</button>
     </div>
 
     <script src="../out-examples/lib.js"></script>
     <script>
+        var provider = new lib.HWProvider();
+
+        async function init() {
+            await provider.init();
+            console.log("Initialized.");
+        }
+
+        async function login() {
+            var addressIndex = parseInt(document.getElementsByName("addressIndexForLogin")[0].value);
+            console.log("Set addressIndex", addressIndex);
+            await provider.login({ addressIndex: addressIndex });
+            await dumpAddresses();
+        }
+
+        async function dumpAddresses() {
+            let addresses = await provider.getAccounts();
+            let currentAddress = await provider.getAddress();
+
+            console.log("Addresses:", addresses);
+            console.log("Current address:", currentAddress);
+        }
+
+        async function setAddress() {
+            var addressIndex = parseInt(document.getElementsByName("addressIndexForSetAddress")[0].value);
+            console.log("Set addressIndex", addressIndex);
+            await provider.setAddressIndex(addressIndex);
+            await dumpAddresses();
+        }
+
+        async function signTransaction() {
+            let transaction = new DummyTransaction();
+            await provider.signTransaction(transaction);
+
+            console.log("Done!");
+        }
+
         function DummyTransaction() {
             // These will be set by hwProvider before calling serializeForSigning().
             this.version = {};
             this.options = {};
 
-            this.serializeForSigning = function(signedBy) {
+            this.serializeForSigning = function (signedBy) {
                 console.log("DummyTransaction.serializeForSigning()", signedBy.bech32());
                 console.log("Transaction version", this.version);
                 console.log("Transaction options", this.options);
@@ -40,25 +93,9 @@
                 return json;
             };
 
-            this.applySignature = function(signature, signedBy) {
+            this.applySignature = function (signature, signedBy) {
                 console.log("DummyTransaction.applySignature()", signature.hex(), signedBy.bech32());
             }
-        }
-
-        async function main() {
-            var provider = new lib.HWProvider();
-            await provider.init();
-            await provider.login({ addressIndex: 0 });
-            let addresses = await provider.getAccounts();
-            let currentAddress = await provider.getAddress();
-
-            console.log("Addresses:", addresses);
-            console.log("Current address:", currentAddress);
-
-            let transaction = new DummyTransaction();
-            await provider.signTransaction(transaction);
-            
-            console.log("Done!");
         }
     </script>
 </body>
