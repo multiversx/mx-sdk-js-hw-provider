@@ -14,6 +14,7 @@ import { Signature } from "./signature";
 import { UserAddress } from "./userAddress";
 import { TransactionVersion } from "./transactionVersion";
 import { TransactionOptions } from "./transactionOptions";
+import { ErrNotInitialized } from "./errors";
 
 export class HWProvider implements IHWProvider {
     hwApp?: IHWElrondApp;
@@ -73,22 +74,27 @@ export class HWProvider implements IHWProvider {
      */
     async login(options?: { addressIndex?: number }): Promise<string> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
 
-        if(options && options.addressIndex) {
-            this.addressIndex = options.addressIndex;
-        }
-
-        await this.hwApp.setAddress(0, this.addressIndex);
-        const {address} = await this.hwApp.getAddress(0, this.addressIndex, true);
-
+        let addressIndex = options?.addressIndex || 0;
+        await this.setAddressIndex(addressIndex);
+        const { address } = await this.hwApp.getAddress(0, addressIndex, true);
         return address;
+    }
+
+    async setAddressIndex(addressIndex: number): Promise<void> {
+        if (!this.hwApp) {
+            throw new ErrNotInitialized();
+        }
+
+        this.addressIndex = addressIndex;
+        await this.hwApp.setAddress(0, addressIndex);
     }
 
     async getAccounts(page: number = 0, pageSize: number = 10): Promise<string[]> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
         const addresses = [];
 
@@ -105,7 +111,7 @@ export class HWProvider implements IHWProvider {
      */
     async logout(): Promise<boolean> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
 
         return true;
@@ -115,15 +121,20 @@ export class HWProvider implements IHWProvider {
      * Fetches current selected ledger address
      */
     async getAddress(): Promise<string> {
-        return this.getCurrentAddress();
+        if (!this.hwApp) {
+            throw new ErrNotInitialized();
+        }
+
+        const { address } = await this.hwApp.getAddress(0, this.addressIndex);
+        return address;
     }
 
     async signTransaction(transaction: ITransaction): Promise<ITransaction> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
 
-        const currentAddressBech32 = await this.getCurrentAddress();
+        const currentAddressBech32 = await this.getAddress();
         const currentAddress = new UserAddress(currentAddressBech32);
 
         let signUsingHash = await this.shouldSignUsingHash();
@@ -151,7 +162,7 @@ export class HWProvider implements IHWProvider {
 
     async signMessage(message: ISignableMessage): Promise<ISignableMessage> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
 
         let serializedMessage = message.serializeForSigningRaw();
@@ -164,16 +175,13 @@ export class HWProvider implements IHWProvider {
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: ISignature; address: string}> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
 
-        if(options && options.addressIndex) {
-            this.addressIndex = options.addressIndex;
-        }
-        
-        await this.hwApp.setAddress(0, this.addressIndex);
+        let addressIndex = options.addressIndex || 0;
+        await this.setAddressIndex(addressIndex);
 
-        const { signature, address } = await this.hwApp.getAddressAndSignAuthToken(0, this.addressIndex, options.token);
+        const { signature, address } = await this.hwApp.getAddressAndSignAuthToken(0, addressIndex, options.token);
 
         return {
             signature: Signature.fromHex(signature),
@@ -183,21 +191,12 @@ export class HWProvider implements IHWProvider {
 
     private async shouldSignUsingHash(): Promise<boolean> {
         if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
+            throw new ErrNotInitialized();
         }
 
         const config = await this.hwApp.getAppConfiguration();
 
         let diff = compareVersions(config.version, LEDGER_TX_HASH_SIGN_MIN_VERSION);
         return diff >= 0;
-    }
-
-    private async getCurrentAddress(): Promise<string> {
-        if (!this.hwApp) {
-            throw new Error("HWApp not initialised, call init() first");
-        }
-        const { address } = await this.hwApp.getAddress(0, this.addressIndex);
-
-        return address;
     }
 }
