@@ -38,7 +38,7 @@
 
         async function login() {
             var addressIndex = parseInt(document.getElementsByName("addressIndexForLogin")[0].value);
-            console.log("Set addressIndex", addressIndex);
+            console.log("Login with addressIndex", addressIndex);
             await provider.login({ addressIndex: addressIndex });
             await dumpAddresses();
         }
