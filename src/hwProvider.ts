@@ -129,7 +129,7 @@ export class HWProvider {
         return address;
     }
 
-    async signTransaction(transaction: ITransaction): Promise<ITransaction> {
+    async signTransaction<T extends ITransaction>(transaction: T): Promise<T> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -151,16 +151,16 @@ export class HWProvider {
         return transaction;
     }
 
-    async signTransactions(transactions: ITransaction[]): Promise<ITransaction[]> {
-        let retTx: ITransaction[] = [];
+    async signTransactions<T extends ITransaction>(transactions: T[]): Promise<T[]> {
+        let result: T[] = [];
         for (let tx of transactions) {
-            retTx.push(await this.signTransaction(tx));
+            result.push(await this.signTransaction(tx));
         }
 
-        return retTx;
+        return result;
     }
 
-    async signMessage(message: ISignableMessage): Promise<ISignableMessage> {
+    async signMessage<T extends ISignableMessage>(message: T): Promise<T> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
