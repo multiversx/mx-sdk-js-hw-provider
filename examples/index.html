@@ -26,6 +26,9 @@
     <div>
         <button onclick="signTransaction()">Sign transaction</button>
     </div>
+    <div>
+        <button onclick="signTransactions()">Sign transactions</button>
+    </div>
 
     <script src="../out-examples/lib.js"></script>
     <script>
@@ -41,6 +44,8 @@
             console.log("Login with addressIndex", addressIndex);
             await provider.login({ addressIndex: addressIndex });
             await logAddresses();
+
+            alert(`Logged in. Address: ${await provider.getAddress()}`);
         }
 
         async function logAddresses() {
@@ -56,19 +61,31 @@
             console.log("Set addressIndex", addressIndex);
             await provider.setAddressIndex(addressIndex);
             await logAddresses();
+
+            alert(`Address has been set: ${await provider.getAddress()}.`);
         }
 
         async function signTransaction() {
-            let transaction = new DummyTransaction();
+            let transaction = new DummyTransaction(0);
             await provider.signTransaction(transaction);
 
-            console.log("Done!");
+            alert(`Done signing single transaction. Signature: ${transaction.signature}`);
         }
 
-        function DummyTransaction() {
+        async function signTransactions() {
+            let transactions = [new DummyTransaction(1), new DummyTransaction(2)];
+            await provider.signTransactions(transactions);
+
+            alert(`Done signing multiple transactions. Signatures: ${JSON.stringify(transactions.map(tx => tx.signature), null, 4)}`);
+        }
+
+        function DummyTransaction(nonce) {
             // These will be set by hwProvider before calling serializeForSigning().
             this.version = {};
             this.options = {};
+
+            this.signature = null;
+            this.signedBy = null;
 
             this.serializeForSigning = function (signedBy) {
                 console.log("DummyTransaction.serializeForSigning()", signedBy.bech32());
@@ -76,7 +93,7 @@
                 console.log("Transaction options", this.options);
 
                 let json = JSON.stringify({
-                    nonce: 0,
+                    nonce: nonce,
                     value: "1",
                     receiver: "erd1uv40ahysflse896x4ktnh6ecx43u7cmy9wnxnvcyp7deg299a4sq6vaywa",
                     sender: signedBy.bech32(),
@@ -94,7 +111,9 @@
             };
 
             this.applySignature = function (signature, signedBy) {
-                console.log("DummyTransaction.applySignature()", signature.hex(), signedBy.bech32());
+                this.signature = signature.hex();
+                this.signedBy = signedBy.bech32();
+                console.log("DummyTransaction.applySignature()", this.signature, this.signedBy);
             }
         }
     </script>
