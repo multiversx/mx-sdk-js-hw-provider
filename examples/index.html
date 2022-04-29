@@ -21,7 +21,7 @@
     </div>
     <div>
         <input value="0" type="number" min="0" name="addressIndexForSetAddress" />
-        <button onclick="setAddress()">Set address index</button>
+        <button onclick="setAddressIndex()">Set address index</button>
     </div>
     <div>
         <button onclick="signTransaction()">Sign transaction</button>
@@ -40,10 +40,10 @@
             var addressIndex = parseInt(document.getElementsByName("addressIndexForLogin")[0].value);
             console.log("Login with addressIndex", addressIndex);
             await provider.login({ addressIndex: addressIndex });
-            await dumpAddresses();
+            await logAddresses();
         }
 
-        async function dumpAddresses() {
+        async function logAddresses() {
             let addresses = await provider.getAccounts();
             let currentAddress = await provider.getAddress();
 
@@ -51,11 +51,11 @@
             console.log("Current address:", currentAddress);
         }
 
-        async function setAddress() {
+        async function setAddressIndex() {
             var addressIndex = parseInt(document.getElementsByName("addressIndexForSetAddress")[0].value);
             console.log("Set addressIndex", addressIndex);
             await provider.setAddressIndex(addressIndex);
-            await dumpAddresses();
+            await logAddresses();
         }
 
         async function signTransaction() {

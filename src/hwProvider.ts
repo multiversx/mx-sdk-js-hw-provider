@@ -72,14 +72,13 @@ export class HWProvider {
     /**
      * Performs a login request by setting the selected index in Ledger and returning that address
      */
-    async login(options?: { addressIndex?: number }): Promise<string> {
+    async login(options: { addressIndex: number } = { addressIndex: 0}): Promise<string> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
-        let addressIndex = options?.addressIndex || 0;
-        await this.setAddressIndex(addressIndex);
-        const { address } = await this.hwApp.getAddress(0, addressIndex, true);
+        await this.setAddressIndex(options.addressIndex);
+        const { address } = await this.hwApp.getAddress(0, options.addressIndex, true);
         return address;
     }
 
@@ -152,12 +151,11 @@ export class HWProvider {
     }
 
     async signTransactions<T extends ITransaction>(transactions: T[]): Promise<T[]> {
-        let result: T[] = [];
         for (let tx of transactions) {
-            result.push(await this.signTransaction(tx));
+            await this.signTransaction(tx);
         }
 
-        return result;
+        return transactions;
     }
 
     async signMessage<T extends ISignableMessage>(message: T): Promise<T> {
