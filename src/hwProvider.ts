@@ -128,7 +128,7 @@ export class HWProvider {
         return address;
     }
 
-    async signTransaction<T extends ITransaction>(transaction: T): Promise<T> {
+    async signTransaction(transaction: ITransaction) {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -146,19 +146,15 @@ export class HWProvider {
         let serializedTransactionBuffer = Buffer.from(serializedTransaction);
         const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, signUsingHash);
         transaction.applySignature(Signature.fromHex(signature), currentAddress);
-
-        return transaction;
     }
 
-    async signTransactions<T extends ITransaction>(transactions: T[]): Promise<T[]> {
+    async signTransactions(transactions: ITransaction[]) {
         for (let tx of transactions) {
             await this.signTransaction(tx);
         }
-
-        return transactions;
     }
 
-    async signMessage<T extends ISignableMessage>(message: T): Promise<T> {
+    async signMessage(message: ISignableMessage){
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -167,8 +163,6 @@ export class HWProvider {
         let serializedMessageBuffer = Buffer.from(serializedMessage);
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);
         message.applySignature(Signature.fromHex(signature));
-
-        return message;
     }
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: ISignature; address: string}> {
