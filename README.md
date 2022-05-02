@@ -2,6 +2,8 @@
 
 Signing provider for dApps: hardware wallet (Ledger).
 
+An integration sample can be found [here](examples/index.html). However, for all purposes, **we recommend using [dapp-core](https://github.com/ElrondNetwork/dapp-core)** instead of integrating the signing provider on your own.
+
 ## Distribution
 
 [npm](https://www.npmjs.com/package/@elrondnetwork/erdjs-hw-provider)
