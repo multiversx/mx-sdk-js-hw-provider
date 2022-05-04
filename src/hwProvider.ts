@@ -128,7 +128,7 @@ export class HWProvider {
         return address;
     }
 
-    async signTransaction(transaction: ITransaction) {
+    async signTransaction<T extends ITransaction>(transaction: T): Promise<T> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -136,25 +136,29 @@ export class HWProvider {
         const currentAddressBech32 = await this.getAddress();
         const currentAddress = new UserAddress(currentAddressBech32);
 
-        let signUsingHash = await this.shouldSignUsingHash();
+        const signUsingHash = await this.shouldSignUsingHash();
         if(signUsingHash) {
             transaction.options = TransactionOptions.withTxHashSignOptions();
             transaction.version = TransactionVersion.withTxHashSignVersion();
         }
 
-        let serializedTransaction = transaction.serializeForSigning(currentAddress);
-        let serializedTransactionBuffer = Buffer.from(serializedTransaction);
+        const serializedTransaction = transaction.serializeForSigning(currentAddress);
+        const serializedTransactionBuffer = Buffer.from(serializedTransaction);
         const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, signUsingHash);
         transaction.applySignature(Signature.fromHex(signature), currentAddress);
+
+        return transaction;
     }
 
-    async signTransactions(transactions: ITransaction[]) {
-        for (let tx of transactions) {
+    async signTransactions<T extends ITransaction>(transactions: T[]): Promise<T[]> {
+        for (const tx of transactions) {
             await this.signTransaction(tx);
         }
+
+        return transactions;
     }
 
-    async signMessage(message: ISignableMessage){
+    async signMessage<T extends ISignableMessage>(message: T): Promise<T> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -163,6 +167,8 @@ export class HWProvider {
         let serializedMessageBuffer = Buffer.from(serializedMessage);
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);
         message.applySignature(Signature.fromHex(signature));
+
+        return message;
     }
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: ISignature; address: string}> {
