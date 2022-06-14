@@ -10,7 +10,6 @@
   "scripts": {
     "test": "mocha",
     "compile": "tsc -p tsconfig.json",
-    "compile-examples": "tsc -p tsconfig.json && browserify out/index.js -o out-examples/lib.js --standalone lib -p esmify",
     "lint": "tslint --project .",
     "pretest": "npm run compile",
     "prepare": "npm run compile"
