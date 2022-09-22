@@ -4,9 +4,7 @@ export interface IHWElrondApp {
         index: number,
         display?: boolean
     ): Promise<{
-        publicKey: string;
         address: string;
-        chainCode?: string;
     }>;
     setAddress(
         account: number,
