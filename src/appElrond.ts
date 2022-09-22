@@ -50,7 +50,7 @@ export default class AppElrond {
         const response = await this.transport.send(CLA, ins, p1, p2, data);
 
         const addressLength = response[0];
-        const address = response.slice(1, 1 + addressLength).toString("ascii");
+        const address = response.subarray(1, 1 + addressLength).toString("ascii");
 
         return { address };
     }
