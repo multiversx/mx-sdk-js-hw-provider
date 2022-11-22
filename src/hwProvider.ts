@@ -1,11 +1,10 @@
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
-// @ts-ignore
-import AppElrond from "@elrondnetwork/hw-app-elrond";
+import AppElrond from "./appElrond";
 
 import platform from "platform";
-import Transport, { Descriptor } from "ledgerhq__hw-transport";
+import Transport from "@ledgerhq/hw-transport";
 
 import { IHWElrondApp, ISignature, ITransaction, ISignableMessage } from "./interface";
 import { compareVersions } from "./versioning";
@@ -37,7 +36,7 @@ export class HWProvider {
         }
     }
 
-    async getTransport(): Promise<Transport<Descriptor>> {
+    async getTransport(): Promise<Transport> {
         let webUSBSupported = await TransportWebUSB.isSupported();
         webUSBSupported =
           webUSBSupported &&
