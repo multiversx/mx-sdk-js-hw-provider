@@ -14,7 +14,7 @@ const ACTIVE_SIGNERS = [
     GET_ADDRESS_AUTH_TOKEN_INS,
 ];
 
-export default class AppElrond {
+export default class LedgerApp {
     transport: Transport;
 
     constructor(transport: Transport, scrambleKey: string = "eGLD") {
