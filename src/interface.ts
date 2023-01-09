@@ -1,4 +1,4 @@
-export interface IHWElrondApp {
+export interface IHWWalletApp {
     getAddress(
         account: number,
         index: number,

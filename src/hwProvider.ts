@@ -1,12 +1,12 @@
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
-import AppElrond from "./appElrond";
+import LedgerApp from "./ledgerApp";
 
 import platform from "platform";
 import Transport from "@ledgerhq/hw-transport";
 
-import { IHWElrondApp, ISignature, ITransaction, ISignableMessage } from "./interface";
+import { IHWWalletApp, ISignature, ITransaction, ISignableMessage } from "./interface";
 import { compareVersions } from "./versioning";
 import { LEDGER_TX_HASH_SIGN_MIN_VERSION } from "./constants";
 import { Signature } from "./signature";
@@ -16,7 +16,7 @@ import { TransactionOptions } from "./transactionOptions";
 import { ErrNotInitialized } from "./errors";
 
 export class HWProvider {
-    hwApp?: IHWElrondApp;
+    hwApp?: IHWWalletApp;
     addressIndex: number = 0;
 
     constructor() {
@@ -28,7 +28,7 @@ export class HWProvider {
     async init(): Promise<boolean> {
         try {
             const transport = await this.getTransport();
-            this.hwApp = new AppElrond(transport);
+            this.hwApp = new LedgerApp(transport);
 
             return true;
         } catch (error) {

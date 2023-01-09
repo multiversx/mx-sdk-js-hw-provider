@@ -1,6 +1,6 @@
 {
-  "name": "@elrondnetwork/erdjs-hw-provider",
-  "version": "2.1.0",
+  "name": "@multiversx/erdjs-hw-provider",
+  "version": "3.0.0",
   "description": "Signing provider for dApps: hardware wallet (Ledger)",
   "main": "out/index.js",
   "types": "out/index.d.js",
@@ -14,8 +14,8 @@
     "pretest": "npm run compile",
     "prepare": "npm run compile"
   },
-  "author": "ElrondNetwork",
-  "license": "GPL-3.0-or-later",
+  "author": "MultiversX",
+  "license": "MIT",
   "dependencies": {
     "@ledgerhq/hw-transport": "^6.27.2",
     "@ledgerhq/hw-transport-u2f": "5.36.0-deprecated",
