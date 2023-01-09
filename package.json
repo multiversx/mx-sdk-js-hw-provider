@@ -15,7 +15,7 @@
     "prepare": "npm run compile"
   },
   "author": "MultiversX",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "dependencies": {
     "@ledgerhq/hw-transport": "^6.27.2",
     "@ledgerhq/hw-transport-u2f": "5.36.0-deprecated",
