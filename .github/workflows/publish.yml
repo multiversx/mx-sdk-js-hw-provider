@@ -1,4 +1,4 @@
-name: Publish erdjs-hw-provider
+name: Publish
 
 on:
   workflow_dispatch:
