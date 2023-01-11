@@ -1,4 +1,4 @@
-# mx-sdk-erdjs-hw-provider
+# mx-sdk-js-hw-provider
 
 Signing provider for dApps: hardware wallet (Ledger).
 
@@ -8,19 +8,19 @@ Note that **we recommend using [dapp-core](https://github.com/multiversx/mx-sdk-
 
 ## Distribution
 
-[npm](https://www.npmjs.com/package/@multiversx/erdjs-hw-provider)
+[npm](https://www.npmjs.com/package/@multiversx/sdk-hw-provider)
 
 ## Installation
 
-`erdjs-hw-provider` is delivered via [npm](https://www.npmjs.com/package/@multiversx/erdjs-hw-provider), therefore it can be installed as follows:
+`sdk-hw-provider` is delivered via [npm](https://www.npmjs.com/package/@multiversx/sdk-hw-provider), therefore it can be installed as follows:
 
 ```
-npm install @multiversx/erdjs-hw-provider
+npm install @multiversx/sdk-hw-provider
 ```
 
 ### Building the library
 
-In order to compile `erdjs-hw-provider`, run the following:
+In order to compile `sdk-hw-provider`, run the following:
 
 ```
 npm install
