@@ -39,7 +39,7 @@ export class HWProvider {
     async getTransport(): Promise<Transport> {
         let webUSBSupported = await TransportWebUSB.isSupported();
         webUSBSupported =
-          webUSBSupported &&
+            webUSBSupported &&
             platform.name !== "Opera";
 
         if (webUSBSupported) {
@@ -71,7 +71,7 @@ export class HWProvider {
     /**
      * Performs a login request by setting the selected index in Ledger and returning that address
      */
-    async login(options: { addressIndex: number } = { addressIndex: 0}): Promise<string> {
+    async login(options: { addressIndex: number } = { addressIndex: 0 }): Promise<string> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -91,6 +91,8 @@ export class HWProvider {
     }
 
     async getAccounts(page: number = 0, pageSize: number = 10): Promise<string[]> {
+        console.info(`HWProvider.getAccounts(page: ${page}, pageSize: ${pageSize})`)
+
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -101,6 +103,8 @@ export class HWProvider {
             const { address } = await this.hwApp.getAddress(0, index);
             addresses.push(address);
         }
+
+        console.info("HWProvider.getAccounts()", JSON.stringify(addresses))
         return addresses;
     }
 
@@ -136,7 +140,7 @@ export class HWProvider {
         const currentAddress = new UserAddress(currentAddressBech32);
 
         const signUsingHash = await this.shouldSignUsingHash();
-        if(signUsingHash) {
+        if (signUsingHash) {
             transaction.options = TransactionOptions.withTxHashSignOptions();
             transaction.version = TransactionVersion.withTxHashSignVersion();
         }
@@ -170,7 +174,7 @@ export class HWProvider {
         return message;
     }
 
-    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: ISignature; address: string}> {
+    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: ISignature; address: string }> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
