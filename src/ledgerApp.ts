@@ -54,7 +54,7 @@ export default class LedgerApp {
 
         // Workaround for yet-unknown Ledger issue.
         const characters = address.split(",");
-        if (characters.length == 0) {
+        if (characters.length == 1) {
             return { address };
         }
 
