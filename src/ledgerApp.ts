@@ -50,15 +50,7 @@ export default class LedgerApp {
         const response = await this.transport.send(CLA, ins, p1, p2, data);
 
         const addressLength = response[0];
-        let address = response.subarray(1, 1 + addressLength).toString("ascii");
-
-        // Workaround for yet-unknown Ledger issue.
-        const parts = address.split(",");
-        if (parts.length == 1) {
-            return { address };
-        }
-
-        address = Buffer.from(parts.map(character => parseInt(character.trim()))).toString("ascii");
+        const address = Buffer.from(response.subarray(1, 1 + addressLength)).toString("ascii");
         return { address };
     }
 
