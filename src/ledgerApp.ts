@@ -53,12 +53,12 @@ export default class LedgerApp {
         let address = response.subarray(1, 1 + addressLength).toString("ascii");
 
         // Workaround for yet-unknown Ledger issue.
-        const characters = address.split(",");
-        if (characters.length == 1) {
+        const parts = address.split(",");
+        if (parts.length == 1) {
             return { address };
         }
 
-        address = Buffer.from(characters.map(character => parseInt(character.trim()))).toString("ascii");
+        address = Buffer.from(parts.map(character => parseInt(character.trim()))).toString("ascii");
         return { address };
     }
 
