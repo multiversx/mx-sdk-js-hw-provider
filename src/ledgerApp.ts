@@ -50,8 +50,7 @@ export default class LedgerApp {
         const response = await this.transport.send(CLA, ins, p1, p2, data);
 
         const addressLength = response[0];
-        const address = response.subarray(1, 1 + addressLength).toString("ascii");
-
+        const address = Buffer.from(response.subarray(1, 1 + addressLength)).toString("ascii");
         return { address };
     }
 
@@ -120,7 +119,7 @@ export default class LedgerApp {
         const response = await this.transport.send(0xed, 0x02, 0x00, 0x00);
         let accountIndex = 0;
         let addressIndex = 0;
-        if(response.length === 14){ // check if the response if from a version newer than 1.0.16
+        if (response.length === 14) { // check if the response if from a version newer than 1.0.16
             accountIndex = this.getIntValueFromBytes(response.slice(6, 10));
             addressIndex = this.getIntValueFromBytes(response.slice(10, 14));
         }
