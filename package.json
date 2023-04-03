@@ -1,6 +1,6 @@
 {
   "name": "@multiversx/sdk-hw-provider",
-  "version": "3.0.3",
+  "version": "4.0.0-beta.0",
   "description": "Signing provider for dApps: hardware wallet (Ledger)",
   "main": "out/index.js",
   "types": "out/index.d.js",

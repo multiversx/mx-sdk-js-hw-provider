@@ -8,11 +8,9 @@ import Transport from "@ledgerhq/hw-transport";
 
 import { IHWWalletApp, ISignature, ITransaction, ISignableMessage } from "./interface";
 import { compareVersions } from "./versioning";
-import { LEDGER_TX_HASH_SIGN_MIN_VERSION } from "./constants";
+import { LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
 import { Signature } from "./signature";
 import { UserAddress } from "./userAddress";
-import { TransactionVersion } from "./transactionVersion";
-import { TransactionOptions } from "./transactionOptions";
 import { ErrNotInitialized } from "./errors";
 
 export class HWProvider {
@@ -136,9 +134,9 @@ export class HWProvider {
         const currentAddress = new UserAddress(currentAddressBech32);
 
         const signUsingHash = await this.shouldSignUsingHash();
-        if(signUsingHash) {
-            transaction.options = TransactionOptions.withTxHashSignOptions();
-            transaction.version = TransactionVersion.withTxHashSignVersion();
+        if (signUsingHash) {
+            transaction.options = transaction.options.valueOf() | TRANSACTION_OPTIONS_TX_HASH_SIGN;
+            transaction.version = TRANSACTION_VERSION_WITH_OPTIONS;
         }
 
         const serializedTransaction = transaction.serializeForSigning(currentAddress);
