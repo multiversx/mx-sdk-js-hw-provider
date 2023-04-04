@@ -137,6 +137,10 @@ export class HWProvider {
         if (signUsingHash) {
             transaction.options = transaction.options.valueOf() | TRANSACTION_OPTIONS_TX_HASH_SIGN;
             transaction.version = TRANSACTION_VERSION_WITH_OPTIONS;
+
+            console.info("Signing transaction using hash.");
+            console.info("Transaction version: ", transaction.version);
+            console.info("Transaction options: ", transaction.options);
         }
 
         const serializedTransaction = transaction.serializeForSigning(currentAddress);

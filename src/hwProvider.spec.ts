@@ -23,35 +23,65 @@ describe("test hwProvider", () => {
         assert.isTrue(await (<any>hwProvider).shouldSignUsingHash());
     });
 
-    it("should signTransaction (does not alter version and options)", async () => {
-        hwApp.version = "1.0.0";
-        hwApp.transactionSignature = "abba";
+    it("should signTransaction", async () => {
+        await testSignTransaction({
+            deviceVersion: "1.0.10",
+            transactionSignature: "abba",
+            transactionVersion: 1,
+            transactionOptions: 0,
+            expectedTransactionVersion: 1,
+            expectedTransactionOptions: 0
+        });
+
+        await testSignTransaction({
+            deviceVersion: "1.0.11",
+            transactionSignature: "abba",
+            transactionVersion: 1,
+            transactionOptions: 0,
+            expectedTransactionVersion: 2,
+            expectedTransactionOptions: 1
+        });
+
+        await testSignTransaction({
+            deviceVersion: "1.0.11",
+            transactionSignature: "abba",
+            transactionVersion: 2,
+            transactionOptions: 1,
+            expectedTransactionVersion: 2,
+            expectedTransactionOptions: 1
+        });
+
+        await testSignTransaction({
+            deviceVersion: "1.1.0",
+            transactionSignature: "abba",
+            transactionVersion: 2,
+            transactionOptions: 0b1110,
+            expectedTransactionVersion: 2,
+            expectedTransactionOptions: 0b1111
+        });
+    });
+
+    async function testSignTransaction(options: {
+        deviceVersion: string,
+        transactionSignature: string,
+        transactionVersion: number,
+        transactionOptions: number,
+        expectedTransactionVersion: number,
+        expectedTransactionOptions: number
+    }) {
+        hwApp.version = options.deviceVersion;
+        hwApp.transactionSignature = options.transactionSignature;
 
         const transaction = new TransactionMock();
-        transaction.version = 1;
-        transaction.options = 0;
+        transaction.version = options.transactionVersion;
+        transaction.options = options.transactionOptions;
 
         await hwProvider.signTransaction(transaction);
 
-        assert.equal(transaction.signature, "abba");
-        assert.equal(transaction.version, 1);
-        assert.equal(transaction.options, 0);
-    });
-
-    it("should signTransaction (alters version and options)", async () => {
-        hwApp.version = "1.1.0";
-        hwApp.transactionSignature = "abba";
-
-        const transaction = new TransactionMock();
-        transaction.version = 1;
-        transaction.options = 0;
-
-        await hwProvider.signTransaction(transaction);
-
-        assert.equal(transaction.signature, "abba");
-        assert.equal(transaction.version, 2);
-        assert.equal(transaction.options, 1);
-    });
+        assert.equal(transaction.signature, options.transactionSignature);
+        assert.equal(transaction.version, options.expectedTransactionVersion);
+        assert.equal(transaction.options, options.expectedTransactionOptions);
+    }
 });
 
 class HwAppMock implements IHWWalletApp {
