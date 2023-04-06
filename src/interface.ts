@@ -20,9 +20,9 @@ export interface IHWWalletApp {
         addressIndex: number;
     }>;
     getAddressAndSignAuthToken(
-      account: number,
-      index: number,
-      token: Buffer,
+        account: number,
+        index: number,
+        token: Buffer,
     ): Promise<{
         address: string,
         signature: string,
@@ -38,9 +38,10 @@ export interface IAddress {
 }
 
 export interface ITransaction {
-    version: ITransactionVersion;
-    options: ITransactionOptions;
-    
+    getVersion(): ITransactionVersion;
+    setVersion(version: ITransactionVersion): void;
+    getOptions(): ITransactionOptions;
+    setOptions(options: ITransactionOptions): void;
     serializeForSigning(signedBy: IAddress): Buffer | string;
     applySignature(signature: ISignature, signedBy: IAddress): void;
 }
