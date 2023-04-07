@@ -143,7 +143,7 @@ export class HWProvider {
         const hasGuardianOption = inputOptions & TRANSACTION_OPTIONS_TX_GUARDED;
 
         if (hasGuardianOption && !canUseGuardian) {
-            throw new Error(`Guardian option not supported by Ledger app version ${appVersion}`);
+            throw new Error(`MultiversX App v${appVersion} does not support guarded transactions.`);
         }
 
         if (mustUseVersionWithOptions) {

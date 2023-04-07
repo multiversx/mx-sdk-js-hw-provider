@@ -78,7 +78,7 @@ describe("test hwProvider", () => {
 
             assert.fail("Should have thrown");
         } catch (err) {
-            assert.equal(err.message, "Guardian option not supported by Ledger app version 1.0.21");
+            assert.equal(err.message, "MultiversX App v1.0.21 does not support guarded transactions.");
         }
 
         await testSignTransaction({
