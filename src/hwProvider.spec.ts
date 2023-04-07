@@ -12,15 +12,30 @@ describe("test hwProvider", () => {
         hwProvider.hwApp = hwApp;
     });
 
-    it("should shouldSignUsingHash", async () => {
+    it("should getAppFeatures", async () => {
         hwApp.version = "1.0.10";
-        assert.isFalse(await (<any>hwProvider).shouldSignUsingHash());
+        assert.isFalse((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
+        assert.isFalse((await (<any>hwProvider).getAppFeatures()).canUseGuardian);
 
         hwApp.version = "1.0.11";
-        assert.isTrue(await (<any>hwProvider).shouldSignUsingHash());
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
+        assert.isFalse((await (<any>hwProvider).getAppFeatures()).canUseGuardian);
+
+        hwApp.version = "1.0.21";
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
+        assert.isFalse((await (<any>hwProvider).getAppFeatures()).canUseGuardian);
+
+        hwApp.version = "1.0.22";
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).canUseGuardian);
 
         hwApp.version = "1.1.0";
-        assert.isTrue(await (<any>hwProvider).shouldSignUsingHash());
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).canUseGuardian);
+
+        hwApp.version = "1.1.0";
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
+        assert.isTrue((await (<any>hwProvider).getAppFeatures()).canUseGuardian);
     });
 
     it("should signTransaction", async () => {
@@ -51,8 +66,23 @@ describe("test hwProvider", () => {
             expectedTransactionOptions: 1
         });
 
+        try {
+            await testSignTransaction({
+                deviceVersion: "1.0.21",
+                transactionSignature: "abba",
+                transactionVersion: 2,
+                transactionOptions: 0b1110,
+                expectedTransactionVersion: 2,
+                expectedTransactionOptions: 0b1111
+            });
+
+            assert.fail("Should have thrown");
+        } catch (err) {
+            assert.equal(err.message, "Guardian option not supported by Ledger app version 1.0.21");
+        }
+
         await testSignTransaction({
-            deviceVersion: "1.1.0",
+            deviceVersion: "1.0.22",
             transactionSignature: "abba",
             transactionVersion: 2,
             transactionOptions: 0b1110,

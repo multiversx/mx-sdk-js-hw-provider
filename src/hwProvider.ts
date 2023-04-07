@@ -6,7 +6,7 @@ import LedgerApp from "./ledgerApp";
 import Transport from "@ledgerhq/hw-transport";
 import platform from "platform";
 
-import { LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
+import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
 import { ErrNotInitialized } from "./errors";
 import { IHWWalletApp, ISignableMessage, ISignature, ITransaction } from "./interface";
 import { Signature } from "./signature";
@@ -133,19 +133,32 @@ export class HWProvider {
         const currentAddressBech32 = await this.getAddress();
         const currentAddress = new UserAddress(currentAddressBech32);
 
-        const signUsingHash = await this.shouldSignUsingHash();
-        if (signUsingHash) {
-            transaction.setVersion(TRANSACTION_VERSION_WITH_OPTIONS);
-            transaction.setOptions(transaction.getOptions().valueOf() | TRANSACTION_OPTIONS_TX_HASH_SIGN);
+        const appFeatures = await this.getAppFeatures();
+        const appVersion = appFeatures.appVersion;
+        const mustUseVersionWithOptions = appFeatures.mustUseVersionWithOptions;
+        const mustUsingHash = appFeatures.mustSignUsingHash;
+        const canUseGuardian = appFeatures.canUseGuardian;
 
-            console.info("Signing transaction using hash.");
+        const inputOptions = transaction.getOptions().valueOf();
+        const hasGuardianOption = inputOptions & TRANSACTION_OPTIONS_TX_GUARDED;
+
+        if (hasGuardianOption && !canUseGuardian) {
+            throw new Error(`Guardian option not supported by Ledger app version ${appVersion}`);
+        }
+
+        if (mustUseVersionWithOptions) {
+            transaction.setVersion(TRANSACTION_VERSION_WITH_OPTIONS);
             console.info("Transaction version: ", transaction.getVersion().valueOf());
+        }
+
+        if (mustUsingHash) {
+            transaction.setOptions(inputOptions | TRANSACTION_OPTIONS_TX_HASH_SIGN);
             console.info("Transaction options: ", transaction.getOptions().valueOf());
         }
 
         const serializedTransaction = transaction.serializeForSigning(currentAddress);
         const serializedTransactionBuffer = Buffer.from(serializedTransaction);
-        const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, signUsingHash);
+        const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, mustUsingHash);
         transaction.applySignature(Signature.fromHex(signature), currentAddress);
 
         return transaction;
@@ -188,14 +201,26 @@ export class HWProvider {
         };
     }
 
-    private async shouldSignUsingHash(): Promise<boolean> {
+    private async getAppFeatures(): Promise<{
+        appVersion: string;
+        mustUseVersionWithOptions: boolean;
+        mustSignUsingHash: boolean;
+        canUseGuardian: boolean;
+    }> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
         const config = await this.hwApp.getAppConfiguration();
+        const appVersion = config.version;
+        const mustSignUsingHash = compareVersions(appVersion, LEDGER_TX_HASH_SIGN_MIN_VERSION) >= 0;
+        const canUseGuardian = compareVersions(appVersion, LEDGER_TX_GUARDIAN_MIN_VERSION) >= 0;
 
-        let diff = compareVersions(config.version, LEDGER_TX_HASH_SIGN_MIN_VERSION);
-        return diff >= 0;
+        return {
+            appVersion: appVersion,
+            mustUseVersionWithOptions: mustSignUsingHash,
+            mustSignUsingHash: mustSignUsingHash,
+            canUseGuardian: canUseGuardian
+        };
     }
 }
