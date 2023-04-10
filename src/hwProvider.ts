@@ -1,19 +1,17 @@
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
+import TransportWebHID from "@ledgerhq/hw-transport-webhid";
+import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApp from "./ledgerApp";
 
-import platform from "platform";
 import Transport from "@ledgerhq/hw-transport";
+import platform from "platform";
 
-import { IHWWalletApp, ISignature, ITransaction, ISignableMessage } from "./interface";
-import { compareVersions } from "./versioning";
-import { LEDGER_TX_HASH_SIGN_MIN_VERSION } from "./constants";
+import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
+import { ErrNotInitialized } from "./errors";
+import { IHWWalletApp, ISignableMessage, ISignature, ITransaction } from "./interface";
 import { Signature } from "./signature";
 import { UserAddress } from "./userAddress";
-import { TransactionVersion } from "./transactionVersion";
-import { TransactionOptions } from "./transactionOptions";
-import { ErrNotInitialized } from "./errors";
+import { compareVersions } from "./versioning";
 
 export class HWProvider {
     hwApp?: IHWWalletApp;
@@ -39,7 +37,7 @@ export class HWProvider {
     async getTransport(): Promise<Transport> {
         let webUSBSupported = await TransportWebUSB.isSupported();
         webUSBSupported =
-          webUSBSupported &&
+            webUSBSupported &&
             platform.name !== "Opera";
 
         if (webUSBSupported) {
@@ -71,7 +69,7 @@ export class HWProvider {
     /**
      * Performs a login request by setting the selected index in Ledger and returning that address
      */
-    async login(options: { addressIndex: number } = { addressIndex: 0}): Promise<string> {
+    async login(options: { addressIndex: number } = { addressIndex: 0 }): Promise<string> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -135,15 +133,32 @@ export class HWProvider {
         const currentAddressBech32 = await this.getAddress();
         const currentAddress = new UserAddress(currentAddressBech32);
 
-        const signUsingHash = await this.shouldSignUsingHash();
-        if(signUsingHash) {
-            transaction.options = TransactionOptions.withTxHashSignOptions();
-            transaction.version = TransactionVersion.withTxHashSignVersion();
+        const appFeatures = await this.getAppFeatures();
+        const appVersion = appFeatures.appVersion;
+        const mustUseVersionWithOptions = appFeatures.mustUseVersionWithOptions;
+        const mustUsingHash = appFeatures.mustSignUsingHash;
+        const canUseGuardian = appFeatures.canUseGuardian;
+
+        const inputOptions = transaction.getOptions().valueOf();
+        const hasGuardianOption = inputOptions & TRANSACTION_OPTIONS_TX_GUARDED;
+
+        if (hasGuardianOption && !canUseGuardian) {
+            throw new Error(`MultiversX App v${appVersion} does not support guarded transactions.`);
+        }
+
+        if (mustUseVersionWithOptions) {
+            transaction.setVersion(TRANSACTION_VERSION_WITH_OPTIONS);
+            console.info("Transaction version: ", transaction.getVersion().valueOf());
+        }
+
+        if (mustUsingHash) {
+            transaction.setOptions(inputOptions | TRANSACTION_OPTIONS_TX_HASH_SIGN);
+            console.info("Transaction options: ", transaction.getOptions().valueOf());
         }
 
         const serializedTransaction = transaction.serializeForSigning(currentAddress);
         const serializedTransactionBuffer = Buffer.from(serializedTransaction);
-        const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, signUsingHash);
+        const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, mustUsingHash);
         transaction.applySignature(Signature.fromHex(signature), currentAddress);
 
         return transaction;
@@ -170,7 +185,7 @@ export class HWProvider {
         return message;
     }
 
-    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{signature: ISignature; address: string}> {
+    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: ISignature; address: string }> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -186,14 +201,26 @@ export class HWProvider {
         };
     }
 
-    private async shouldSignUsingHash(): Promise<boolean> {
+    private async getAppFeatures(): Promise<{
+        appVersion: string;
+        mustUseVersionWithOptions: boolean;
+        mustSignUsingHash: boolean;
+        canUseGuardian: boolean;
+    }> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
         const config = await this.hwApp.getAppConfiguration();
+        const appVersion = config.version;
+        const mustSignUsingHash = compareVersions(appVersion, LEDGER_TX_HASH_SIGN_MIN_VERSION) >= 0;
+        const canUseGuardian = compareVersions(appVersion, LEDGER_TX_GUARDIAN_MIN_VERSION) >= 0;
 
-        let diff = compareVersions(config.version, LEDGER_TX_HASH_SIGN_MIN_VERSION);
-        return diff >= 0;
+        return {
+            appVersion: appVersion,
+            mustUseVersionWithOptions: mustSignUsingHash,
+            mustSignUsingHash: mustSignUsingHash,
+            canUseGuardian: canUseGuardian
+        };
     }
 }
