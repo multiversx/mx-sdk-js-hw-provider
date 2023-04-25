@@ -1,10 +1,11 @@
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
+import BluetoothTransport from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApp from "./ledgerApp";
 
+
 import Transport from "@ledgerhq/hw-transport";
-import platform from "platform";
 
 import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
 import { ErrNotInitialized } from "./errors";
@@ -38,23 +39,25 @@ export class HWProvider {
         let webUSBSupported = await TransportWebUSB.isSupported();
         let webHIDSupported = await TransportWebHID.isSupported();
         let u2fSupported = await TransportU2f.isSupported();
+        let bluetoothSupported = await BluetoothTransport.isSupported();
 
         console.log("webUSBSupported: ", webUSBSupported);
         console.log("webHIDSupported: ", webHIDSupported);
         console.log("u2fSupported: ", u2fSupported);
+        console.log("bluetoothSupported: ", bluetoothSupported);
 
-        webUSBSupported =
-            webUSBSupported &&
-            platform.name !== "Opera";
+        // webUSBSupported =
+        //     webUSBSupported &&
+        //     platform.name !== "Opera";
 
-        if (webUSBSupported) {
-            return await TransportWebUSB.create();
-        }
+        // if (webUSBSupported) {
+        //     return await TransportWebUSB.create();
+        // }
 
 
-        if (webHIDSupported) {
-            return await TransportWebHID.open("");
-        }
+        // if (webHIDSupported) {
+        //     return await TransportWebHID.open("");
+        // }
 
         return await TransportU2f.create();
     }

@@ -19,8 +19,9 @@
   "dependencies": {
     "@ledgerhq/hw-transport": "6.27.9",
     "@ledgerhq/hw-transport-u2f": "5.36.0-deprecated",
-    "@ledgerhq/hw-transport-webhid": "6.11.2",
-    "@ledgerhq/hw-transport-webusb": "6.11.2",
+    "@ledgerhq/hw-transport-webhid": "6.27.13",
+    "@ledgerhq/hw-transport-webusb": "6.27.13",
+    "@ledgerhq/hw-transport-web-ble": "6.27.13",
     "@ledgerhq/devices": "7.0.6",
     "@ledgerhq/errors": "6.12.2",
     "buffer": "6.0.3",
