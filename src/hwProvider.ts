@@ -36,6 +36,13 @@ export class HWProvider {
 
     async getTransport(): Promise<Transport> {
         let webUSBSupported = await TransportWebUSB.isSupported();
+        let webHIDSupported = await TransportWebHID.isSupported();
+        let u2fSupported = await TransportU2f.isSupported();
+
+        console.log("webUSBSupported: ", webUSBSupported);
+        console.log("webHIDSupported: ", webHIDSupported);
+        console.log("u2fSupported: ", u2fSupported);
+
         webUSBSupported =
             webUSBSupported &&
             platform.name !== "Opera";
@@ -44,7 +51,7 @@ export class HWProvider {
             return await TransportWebUSB.create();
         }
 
-        let webHIDSupported = await TransportWebHID.isSupported();
+
         if (webHIDSupported) {
             return await TransportWebHID.open("");
         }
