@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
-import { IAddress, IHWWalletApp, ISignature, ITransaction, ITransactionOptions, ITransactionVersion } from "./interface";
+import { IAddress, IHWWalletApp, ITransaction, ITransactionOptions, ITransactionVersion } from "./interface";
 
 describe("test hwProvider", () => {
     let hwApp: HwAppMock;
@@ -108,7 +108,7 @@ describe("test hwProvider", () => {
 
         await hwProvider.signTransaction(transaction);
 
-        assert.equal(transaction.signature, options.transactionSignature);
+        assert.equal(transaction.signature.toString("hex"), options.transactionSignature);
         assert.equal(transaction.version, options.expectedTransactionVersion);
         assert.equal(transaction.options, options.expectedTransactionOptions);
     }
@@ -158,8 +158,8 @@ class HwAppMock implements IHWWalletApp {
 }
 
 class TransactionMock implements ITransaction {
-    serialized = "";
-    signature = "";
+    serialized: Buffer = Buffer.from([]);
+    signature: Buffer = Buffer.from([]);
     signedBy: IAddress | null = null;
     version: ITransactionVersion = 0;
     options: ITransactionOptions = 0;
@@ -180,12 +180,11 @@ class TransactionMock implements ITransaction {
         this.options = options;
     }
 
-    serializeForSigning(_signedBy: IAddress): string | Buffer {
+    serializeForSigning(): Buffer {
         return this.serialized;
     }
 
-    applySignature(signature: ISignature, signedBy: IAddress): void {
-        this.signature = signature.hex();
-        this.signedBy = signedBy;
+    applySignature(signature: Buffer): void {
+        this.signature = signature;
     }
 }

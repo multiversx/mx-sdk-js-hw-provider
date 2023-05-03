@@ -29,10 +29,6 @@ export interface IHWWalletApp {
     }>;
 }
 
-export interface ISignature {
-    hex(): string;
-}
-
 export interface IAddress {
     bech32(): string;
 }
@@ -42,13 +38,13 @@ export interface ITransaction {
     setVersion(version: ITransactionVersion): void;
     getOptions(): ITransactionOptions;
     setOptions(options: ITransactionOptions): void;
-    serializeForSigning(signedBy: IAddress): Buffer | string;
-    applySignature(signature: ISignature, signedBy: IAddress): void;
+    serializeForSigning(): Buffer;
+    applySignature(signature: Buffer): void;
 }
 
 export interface ISignableMessage {
-    serializeForSigningRaw(): Buffer | string;
-    applySignature(signature: ISignature): void;
+    serializeForSigningRaw(): Buffer;
+    applySignature(signature: Buffer): void;
 }
 
 export interface ITransactionVersion {
