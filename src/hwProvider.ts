@@ -8,8 +8,7 @@ import platform from "platform";
 
 import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
 import { ErrNotInitialized } from "./errors";
-import { IHWWalletApp, ISignableMessage, ISignature, ITransaction } from "./interface";
-import { Signature } from "./signature";
+import { IHWWalletApp, ISignableMessage, ITransaction } from "./interface";
 import { UserAddress } from "./userAddress";
 import { compareVersions } from "./versioning";
 
@@ -156,10 +155,10 @@ export class HWProvider {
             console.info("Transaction options: ", transaction.getOptions().valueOf());
         }
 
-        const serializedTransaction = transaction.serializeForSigning(currentAddress);
+        const serializedTransaction = transaction.serializeForSigning();
         const serializedTransactionBuffer = Buffer.from(serializedTransaction);
         const signature = await this.hwApp.signTransaction(serializedTransactionBuffer, mustUsingHash);
-        transaction.applySignature(Signature.fromHex(signature), currentAddress);
+        transaction.applySignature(Buffer.from(signature, "hex"));
 
         return transaction;
     }
@@ -180,12 +179,12 @@ export class HWProvider {
         let serializedMessage = message.serializeForSigningRaw();
         let serializedMessageBuffer = Buffer.from(serializedMessage);
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);
-        message.applySignature(Signature.fromHex(signature));
+        message.applySignature(Buffer.from(signature, "hex"));
 
         return message;
     }
 
-    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: ISignature; address: string }> {
+    async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: Buffer; address: string }> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -196,7 +195,7 @@ export class HWProvider {
         const { signature, address } = await this.hwApp.getAddressAndSignAuthToken(0, addressIndex, options.token);
 
         return {
-            signature: Signature.fromHex(signature),
+            signature: Buffer.from(signature, "hex"),
             address
         };
     }
