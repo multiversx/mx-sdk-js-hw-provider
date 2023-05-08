@@ -1,4 +1,4 @@
-import { Address, Transaction } from "@multiversx/sdk-core";
+import { Address, SignableMessage, Transaction } from "@multiversx/sdk-core";
 import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
@@ -101,23 +101,68 @@ describe("test hwProvider", () => {
         expectedTransactionOptions: number
     }) {
         hwApp.version = options.deviceVersion;
-        hwApp.transactionSignature = options.transactionSignature;
+        hwApp.transactionSignatures = [options.transactionSignature];
 
         const transaction = new Transaction({
             sender: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
             receiver: Address.fromBech32("erd1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqzu66jx"),
-            gasLimit: 1000000,
+            gasLimit: 123456,
             chainID: "D",
             options: options.transactionOptions,
             version: options.transactionVersion
         });
 
-        await hwProvider.signTransaction(transaction);
+        const signedTransaction = await hwProvider.signTransaction(transaction);
 
-        assert.equal(transaction.getSignature().toString("hex"), options.transactionSignature);
-        assert.equal(transaction.getVersion().valueOf(), options.expectedTransactionVersion);
-        assert.equal(transaction.getOptions().valueOf(), options.expectedTransactionOptions);
+        assert.equal(signedTransaction.getSignature().toString("hex"), options.transactionSignature);
+        assert.equal(signedTransaction.getVersion().valueOf(), options.expectedTransactionVersion);
+        assert.equal(signedTransaction.getOptions().valueOf(), options.expectedTransactionOptions);
     }
+
+    it("should signTransactions", async () => {
+        const txA = new Transaction({
+            sender: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
+            receiver: Address.fromBech32("erd1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqzu66jx"),
+            gasLimit: 123456,
+            chainID: "D",
+            nonce: 42
+        });
+
+        const txB = new Transaction({
+            sender: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
+            receiver: Address.fromBech32("erd1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqzu66jx"),
+            gasLimit: 123456,
+            chainID: "D",
+            nonce: 43
+        });
+
+        hwApp.transactionSignatures = ["aaaa", "bbbb"];
+
+        const transactions = await hwProvider.signTransactions([txA, txB]);
+
+        assert.equal(transactions[0].getSignature().toString("hex"), "aaaa");
+        assert.equal(transactions[0].getNonce().valueOf(), 42);
+        assert.equal(transactions[1].getSignature().toString("hex"), "bbbb");
+        assert.equal(transactions[1].getNonce().valueOf(), 43);
+    });
+
+    it("should signMessage", async () => {
+        const message = new SignableMessage({
+            message: Buffer.from("Hello World"),
+            address: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
+            version: 42
+        });
+
+        hwApp.messageSignature = "abba";
+
+        const signedMessage = await hwProvider.signMessage(message);
+
+        assert.equal(signedMessage.message.toString(), "Hello World");
+        assert.equal(signedMessage.address.toString(), "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th");
+        assert.equal(signedMessage.version, 42);
+        assert.equal(signedMessage.getSignature().toString("hex"), "abba");
+        assert.deepEqual(message.serializeForSigning(), signedMessage.serializeForSigning());
+    });
 });
 
 class HwAppMock implements IHWWalletApp {
@@ -126,7 +171,7 @@ class HwAppMock implements IHWWalletApp {
     accountIndex = 0;
     addressIndex = 0;
     address = "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th";
-    transactionSignature = "";
+    transactionSignatures: string[] = [];
     messageSignature = "";
     authTokenSignature = "";
 
@@ -138,8 +183,8 @@ class HwAppMock implements IHWWalletApp {
         return { address: this.address };
     }
 
-    async signTransaction(_rawTx: Buffer, _usingHash: boolean) {
-        return this.transactionSignature;
+    async signTransaction(_rawTx: Buffer, _usingHash: boolean): Promise<string> {
+        return this.transactionSignatures.shift() || "";
     }
 
     async signMessage(_rawMessage: Buffer) {
