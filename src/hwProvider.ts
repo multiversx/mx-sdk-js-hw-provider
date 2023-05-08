@@ -6,10 +6,10 @@ import LedgerApp from "./ledgerApp";
 import Transport from "@ledgerhq/hw-transport";
 import platform from "platform";
 
+import { SignableMessage, Transaction } from "@multiversx/sdk-core";
 import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
 import { ErrNotInitialized } from "./errors";
-import { IHWWalletApp, ISignableMessage, ITransaction } from "./interface";
-import { UserAddress } from "./userAddress";
+import { IHWWalletApp } from "./interface";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
@@ -124,13 +124,12 @@ export class HWProvider {
         return address;
     }
 
-    async signTransaction<T extends ITransaction>(transaction: T): Promise<T> {
+    async signTransaction(transaction: Transaction): Promise<Transaction> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
-        const currentAddressBech32 = await this.getAddress();
-        const currentAddress = new UserAddress(currentAddressBech32);
+        transaction = this.cloneTransaction(transaction);
 
         const appFeatures = await this.getAppFeatures();
         const appVersion = appFeatures.appVersion;
@@ -163,18 +162,27 @@ export class HWProvider {
         return transaction;
     }
 
-    async signTransactions<T extends ITransaction>(transactions: T[]): Promise<T[]> {
-        for (const tx of transactions) {
-            await this.signTransaction(tx);
-        }
-
-        return transactions;
+    private cloneTransaction(transaction: Transaction): Transaction {
+        return Transaction.fromPlainObject(transaction.toPlainObject());
     }
 
-    async signMessage<T extends ISignableMessage>(message: T): Promise<T> {
+    async signTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+        const signedTransactions = [];
+
+        for (const transaction of transactions) {
+            const signedTransaction = await this.signTransaction(transaction);
+            signedTransactions.push(signedTransaction);
+        }
+
+        return signedTransactions;
+    }
+
+    async signMessage(message: SignableMessage): Promise<SignableMessage> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
+
+        message = this.cloneMessage(message);
 
         let serializedMessage = message.serializeForSigningRaw();
         let serializedMessageBuffer = Buffer.from(serializedMessage);
@@ -182,6 +190,15 @@ export class HWProvider {
         message.applySignature(Buffer.from(signature, "hex"));
 
         return message;
+    }
+
+    private cloneMessage(message: SignableMessage): SignableMessage {
+        return new SignableMessage({
+            message: message.message,
+            address: message.address,
+            signer: message.signer,
+            version: message.version,
+        });
     }
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: Buffer; address: string }> {
