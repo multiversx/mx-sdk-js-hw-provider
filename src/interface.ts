@@ -28,29 +28,3 @@ export interface IHWWalletApp {
         signature: string,
     }>;
 }
-
-export interface IAddress {
-    bech32(): string;
-}
-
-export interface ITransaction {
-    getVersion(): ITransactionVersion;
-    setVersion(version: ITransactionVersion): void;
-    getOptions(): ITransactionOptions;
-    setOptions(options: ITransactionOptions): void;
-    serializeForSigning(): Buffer;
-    applySignature(signature: Buffer): void;
-}
-
-export interface ISignableMessage {
-    serializeForSigningRaw(): Buffer;
-    applySignature(signature: Buffer): void;
-}
-
-export interface ITransactionVersion {
-    valueOf(): number;
-}
-
-export interface ITransactionOptions {
-    valueOf(): number;
-}

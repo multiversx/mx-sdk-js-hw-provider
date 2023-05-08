@@ -1,6 +1,7 @@
+import { Address, Transaction } from "@multiversx/sdk-core";
 import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
-import { IAddress, IHWWalletApp, ITransaction, ITransactionOptions, ITransactionVersion } from "./interface";
+import { IHWWalletApp } from "./interface";
 
 describe("test hwProvider", () => {
     let hwApp: HwAppMock;
@@ -102,15 +103,20 @@ describe("test hwProvider", () => {
         hwApp.version = options.deviceVersion;
         hwApp.transactionSignature = options.transactionSignature;
 
-        const transaction = new TransactionMock();
-        transaction.version = options.transactionVersion;
-        transaction.options = options.transactionOptions;
+        const transaction = new Transaction({
+            sender: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
+            receiver: Address.fromBech32("erd1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqzu66jx"),
+            gasLimit: 1000000,
+            chainID: "D",
+            options: options.transactionOptions,
+            version: options.transactionVersion
+        });
 
         await hwProvider.signTransaction(transaction);
 
-        assert.equal(transaction.signature.toString("hex"), options.transactionSignature);
-        assert.equal(transaction.version, options.expectedTransactionVersion);
-        assert.equal(transaction.options, options.expectedTransactionOptions);
+        assert.equal(transaction.getSignature().toString("hex"), options.transactionSignature);
+        assert.equal(transaction.getVersion().valueOf(), options.expectedTransactionVersion);
+        assert.equal(transaction.getOptions().valueOf(), options.expectedTransactionOptions);
     }
 });
 
@@ -154,37 +160,5 @@ class HwAppMock implements IHWWalletApp {
             address: this.address,
             signature: this.authTokenSignature
         }
-    }
-}
-
-class TransactionMock implements ITransaction {
-    serialized: Buffer = Buffer.from([]);
-    signature: Buffer = Buffer.from([]);
-    signedBy: IAddress | null = null;
-    version: ITransactionVersion = 0;
-    options: ITransactionOptions = 0;
-
-    getVersion(): ITransactionVersion {
-        return this.version;
-    }
-
-    setVersion(version: ITransactionVersion): void {
-        this.version = version;
-    }
-
-    getOptions(): ITransactionOptions {
-        return this.options;
-    }
-
-    setOptions(options: ITransactionOptions): void {
-        this.options = options;
-    }
-
-    serializeForSigning(): Buffer {
-        return this.serialized;
-    }
-
-    applySignature(signature: Buffer): void {
-        this.signature = signature;
     }
 }

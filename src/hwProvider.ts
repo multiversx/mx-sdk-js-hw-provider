@@ -6,10 +6,10 @@ import LedgerApp from "./ledgerApp";
 import Transport from "@ledgerhq/hw-transport";
 import platform from "platform";
 
+import { Address, SignableMessage, Transaction } from "@multiversx/sdk-core";
 import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
 import { ErrNotInitialized } from "./errors";
-import { IHWWalletApp, ISignableMessage, ITransaction } from "./interface";
-import { UserAddress } from "./userAddress";
+import { IHWWalletApp } from "./interface";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
@@ -124,13 +124,13 @@ export class HWProvider {
         return address;
     }
 
-    async signTransaction<T extends ITransaction>(transaction: T): Promise<T> {
+    async signTransaction<T extends Transaction>(transaction: T): Promise<T> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
         const currentAddressBech32 = await this.getAddress();
-        const currentAddress = new UserAddress(currentAddressBech32);
+        const currentAddress = Address.fromBech32(currentAddressBech32);
 
         const appFeatures = await this.getAppFeatures();
         const appVersion = appFeatures.appVersion;
@@ -163,7 +163,7 @@ export class HWProvider {
         return transaction;
     }
 
-    async signTransactions<T extends ITransaction>(transactions: T[]): Promise<T[]> {
+    async signTransactions(transactions: Transaction[]): Promise<Transaction[]> {
         for (const tx of transactions) {
             await this.signTransaction(tx);
         }
@@ -171,7 +171,7 @@ export class HWProvider {
         return transactions;
     }
 
-    async signMessage<T extends ISignableMessage>(message: T): Promise<T> {
+    async signMessage(message: SignableMessage): Promise<SignableMessage> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
