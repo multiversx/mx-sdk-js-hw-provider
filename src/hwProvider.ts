@@ -167,7 +167,14 @@ export class HWProvider {
     }
 
     async signTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-        return Promise.all(transactions.map(transaction => this.signTransaction(transaction)));
+        const signedTransactions = [];
+
+        for (const transaction of transactions) {
+            const signedTransaction = await this.signTransaction(transaction);
+            signedTransactions.push(signedTransaction);
+        }
+
+        return signedTransactions;
     }
 
     async signMessage(message: SignableMessage): Promise<SignableMessage> {
