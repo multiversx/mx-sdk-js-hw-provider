@@ -29,7 +29,7 @@ export class HWProvider {
 
             return true;
         } catch (error) {
-            console.error(error);
+            console.error("Provider initialization error", error);
             return false;
         }
     }
