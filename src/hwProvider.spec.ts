@@ -9,8 +9,7 @@ describe("test hwProvider", () => {
 
     before(async function () {
         hwApp = new HwAppMock();
-        hwProvider = new HWProvider();
-        hwProvider.hwApp = hwApp;
+        hwProvider = new HWProvider(hwApp);
     });
 
     it("should getAppFeatures", async () => {

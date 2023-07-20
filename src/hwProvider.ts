@@ -13,10 +13,18 @@ import { IHWWalletApp } from "./interface";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
-    hwApp?: IHWWalletApp;
-    addressIndex: number = 0;
+    private _addressIndex: number = 0;
 
-    constructor() {
+    constructor(
+        private _hwApp?: IHWWalletApp
+    ) {}
+
+    public get addressIndex(): number {
+        return this._addressIndex;
+    }
+
+    public get hwApp(): IHWWalletApp | undefined {
+        return this._hwApp;
     }
 
     /**
@@ -25,7 +33,7 @@ export class HWProvider {
     async init(): Promise<boolean> {
         try {
             const transport = await this.getTransport();
-            this.hwApp = new LedgerApp(transport);
+            this._hwApp = new LedgerApp(transport);
 
             return true;
         } catch (error) {
@@ -84,7 +92,7 @@ export class HWProvider {
             throw new ErrNotInitialized();
         }
 
-        this.addressIndex = addressIndex;
+        this._addressIndex = addressIndex;
         await this.hwApp.setAddress(0, addressIndex);
     }
 
@@ -121,7 +129,7 @@ export class HWProvider {
             throw new ErrNotInitialized();
         }
 
-        const { address } = await this.hwApp.getAddress(0, this.addressIndex);
+        const { address } = await this.hwApp.getAddress(0, this._addressIndex);
         return address;
     }
 
