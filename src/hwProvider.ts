@@ -1,6 +1,7 @@
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import LedgerApp from "./ledgerApp";
 
 import Transport from "@ledgerhq/hw-transport";
@@ -43,21 +44,67 @@ export class HWProvider {
     }
 
     async getTransport(): Promise<Transport> {
-        let webUSBSupported = await TransportWebUSB.isSupported();
-        webUSBSupported =
-            webUSBSupported &&
-            platform.name !== "Opera";
+        const isLedgerSupported = await this.isLedgerTransportSupported();
+
+        if (!isLedgerSupported) {
+            throw Error('Ledger is not supported');
+        }
+
+        let webBLESupported = await this.isBLESupported();
+
+        if (webBLESupported) {
+            return await TransportWebBLE.create();
+        }
+
+        let webUSBSupported = await this.isWebUSBSupported();
 
         if (webUSBSupported) {
             return await TransportWebUSB.create();
         }
 
-        let webHIDSupported = await TransportWebHID.isSupported();
+        let webHIDSupported = await this.isWebUSBSupported();
+
         if (webHIDSupported) {
-            return await TransportWebHID.open("");
+            return await TransportWebHID.create();
         }
 
+        // Deprecated: Use WebHID instead
+        // https://developers.ledger.com/docs/transport/choose-the-transport/
         return await TransportU2f.create();
+    }
+
+    async isLedgerTransportSupported(): Promise<boolean> {
+        const isWebBLESupported = await this.isBLESupported();
+        const isWebUSBSupported = await this.isWebUSBSupported();
+        const isWebHIDSupported = await this.isWebHIDSupported();
+        const isU2FSupported = await this.isU2FSupported();
+
+        return isWebBLESupported || isWebUSBSupported || isWebHIDSupported || isU2FSupported;
+
+    }
+
+    async isBLESupported(): Promise<boolean> {
+        // WebBLE is supported on Android and Desktop
+        // but Ledger does not support pairing with desktop devices yet
+        // https://support.ledger.com/hc/en-us/articles/360019138694-Set-up-Bluetooth-connection?docs=true
+        return await TransportWebBLE.isSupported() && this.isAndroid();
+    }
+
+    isAndroid(): boolean {
+        return navigator.userAgent.toLowerCase().includes('android');
+    }
+
+    async isWebUSBSupported(): Promise<boolean> {
+        return await TransportWebUSB.isSupported() && platform.name !== "Opera";
+    }
+
+    async isWebHIDSupported(): Promise<boolean> {
+        return await TransportWebHID.isSupported();
+    }
+
+    // U2F is deprecated. Use only BLE, USB, or HID
+    async isU2FSupported(): Promise<boolean> {
+        return await TransportU2f.isSupported();
     }
 
     /**
