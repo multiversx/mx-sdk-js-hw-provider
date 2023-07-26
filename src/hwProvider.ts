@@ -50,19 +50,19 @@ export class HWProvider {
             throw Error('Ledger is not supported');
         }
 
-        let webBLESupported = await this.isBLESupported();
+        const webBLESupported = await this.isBLESupported();
 
         if (webBLESupported) {
             return await TransportWebBLE.create();
         }
 
-        let webUSBSupported = await this.isWebUSBSupported();
+        const webUSBSupported = await this.isWebUSBSupported();
 
         if (webUSBSupported) {
             return await TransportWebUSB.create();
         }
 
-        let webHIDSupported = await this.isWebUSBSupported();
+        const webHIDSupported = await this.isWebUSBSupported();
 
         if (webHIDSupported) {
             return await TransportWebHID.create();
@@ -74,12 +74,7 @@ export class HWProvider {
     }
 
     async isLedgerTransportSupported(): Promise<boolean> {
-        const isWebBLESupported = await this.isBLESupported();
-        const isWebUSBSupported = await this.isWebUSBSupported();
-        const isWebHIDSupported = await this.isWebHIDSupported();
-        const isU2FSupported = await this.isU2FSupported();
-
-        return isWebBLESupported || isWebUSBSupported || isWebHIDSupported || isU2FSupported;
+        return await this.isBLESupported() || await this.isWebUSBSupported() || await this.isWebHIDSupported() || await this.isU2FSupported();
 
     }
 
@@ -91,7 +86,7 @@ export class HWProvider {
     }
 
     isAndroid(): boolean {
-        return navigator.userAgent.toLowerCase().includes('android');
+        return window.navigator?.userAgent?.toLowerCase().includes('android');
     }
 
     async isWebUSBSupported(): Promise<boolean> {
@@ -106,7 +101,6 @@ export class HWProvider {
     async isU2FSupported(): Promise<boolean> {
         return await TransportU2f.isSupported();
     }
-
     /**
      * Returns true if init() was previously called successfully
      */

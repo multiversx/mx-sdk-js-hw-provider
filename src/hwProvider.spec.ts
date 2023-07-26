@@ -1,5 +1,5 @@
 import { Address, SignableMessage, Transaction } from "@multiversx/sdk-core";
-import { assert } from "chai";
+import {assert} from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
 
@@ -10,6 +10,140 @@ describe("test hwProvider", () => {
     before(async function () {
         hwApp = new HwAppMock();
         hwProvider = new HWProvider(hwApp);
+    });
+
+    it("should not support ledger when navigator is empty", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {}
+            },
+            navigator: {}
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isFalse(isSupported);
+    });
+
+    it("should throw error when ledger is not supported", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {},
+            },
+            navigator: {}
+        });
+
+        try {
+            await hwProvider.getTransport();
+            assert.fail('Ledger is not supported');
+        } catch (e) {
+            assert.equal(e.message, 'Ledger is not supported');
+        }
+    });
+
+    it("should not support Bluetooth API on iOS", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    userAgent: 'iOS',
+                    bluetooth: {}
+                },
+            },
+            navigator: {
+                userAgent: 'iOS',
+                bluetooth: {}
+            },
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+
+        assert.isFalse(isSupported);
+    });
+
+    it("should support Bluetooth API on Android", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    userAgent: 'Android',
+                    bluetooth: {}
+                }
+            },
+            navigator: {
+                userAgent: 'Android',
+                bluetooth: {}
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+
+        assert.isTrue(isSupported);
+    });
+
+    it("should support USB API", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    usb: {
+                        getDevices: () => true
+                    },
+                    platform: {
+                        name: ''
+                    }
+                }
+            },
+            navigator: {
+                usb: {
+                    getDevices: () => true
+                },
+                platform: {
+                    name: ''
+                }
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isTrue(isSupported);
+    });
+
+    it("should not support USB API on Opera", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    usb: {
+                        getDevices: () => true
+                    },
+                    platform: {
+                        name: 'Opera'
+                    }
+                }
+            },
+            navigator: {
+                usb: {
+                    getDevices: () => true
+                },
+                platform: {
+                    name: 'Opera'
+                }
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isTrue(isSupported);
+    });
+
+    it("should support HID", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    hid: {}
+                }
+            },
+            navigator: {
+                hid: {}
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isTrue(isSupported);
     });
 
     it("should getAppFeatures", async () => {
@@ -203,6 +337,6 @@ class HwAppMock implements IHWWalletApp {
         return {
             address: this.address,
             signature: this.authTokenSignature
-        }
+        };
     }
 }

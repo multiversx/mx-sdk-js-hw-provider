@@ -21,7 +21,7 @@
     "@ledgerhq/errors": "6.12.6",
     "@ledgerhq/hw-transport": "6.28.4",
     "@ledgerhq/hw-transport-u2f": "5.36.0-deprecated",
-    "@ledgerhq/hw-transport-web-ble": "6.27.15",
+    "@ledgerhq/hw-transport-web-ble": "^6.27.17",
     "@ledgerhq/hw-transport-webhid": "6.27.15",
     "@ledgerhq/hw-transport-webusb": "6.27.15",
     "buffer": "6.0.3",
