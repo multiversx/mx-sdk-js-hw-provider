@@ -1,10 +1,9 @@
+import Transport from "@ledgerhq/hw-transport";
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import LedgerApp from "./ledgerApp";
-
-import Transport from "@ledgerhq/hw-transport";
 import platform from "platform";
 
 import { SignableMessage, Transaction } from "@multiversx/sdk-core";
@@ -14,7 +13,8 @@ import { IHWWalletApp } from "./interface";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
-    private _addressIndex: number = 0;
+    private _addressIndex = 0;
+    private _transport: Transport | undefined;
 
     constructor(
         private _hwApp?: IHWWalletApp
@@ -32,45 +32,74 @@ export class HWProvider {
      * Creates transport and initialises ledger app.
      */
     async init(): Promise<boolean> {
-        try {
-            const transport = await this.getTransport();
-            this._hwApp = new LedgerApp(transport);
-
+        if (this.isInitialized()) {
             return true;
+        }
+
+        try {
+            this._transport = await this.getTransport();
+
+            if (this._transport) {
+                this._hwApp = new LedgerApp(this._transport);
+            }
+
+            return this.isInitialized();
         } catch (error) {
             console.error("Provider initialization error", error);
             return false;
         }
     }
 
-    async getTransport(): Promise<Transport> {
+    async getTransport(): Promise<Transport | undefined> {
+        if (this._transport) {
+            return this._transport;
+        }
+
         const isLedgerSupported = await this.isLedgerTransportSupported();
 
         if (!isLedgerSupported) {
-            throw Error('Ledger is not supported');
+            throw Error("Ledger is not supported");
         }
 
-        const webBLESupported = await this.isBLESupported();
+        try {
+            const webUSBSupported = await this.isWebUSBSupported();
 
-        if (webBLESupported) {
-            return await TransportWebBLE.create();
+            if (webUSBSupported) {
+                return await TransportWebUSB.create();
+            }
+        } catch (error) {
+            console.error("Failed to create USB transport:", error);
         }
 
-        const webUSBSupported = await this.isWebUSBSupported();
+        try {
+            const webBLESupported = await this.isBLESupported();
 
-        if (webUSBSupported) {
-            return await TransportWebUSB.create();
+            if (webBLESupported) {
+               return await TransportWebBLE.create();
+            }
+        } catch (error) {
+            console.error("Failed to create BLE transport:", error);
         }
 
-        const webHIDSupported = await this.isWebUSBSupported();
+        try {
+            const webHIDSupported = await this.isWebHIDSupported();
 
-        if (webHIDSupported) {
-            return await TransportWebHID.create();
+            if (webHIDSupported) {
+                 return await TransportWebHID.create();
+            }
+        } catch (error) {
+            console.error("Failed to create HID transport:", error);
         }
 
         // Deprecated: Use WebHID instead
         // https://developers.ledger.com/docs/transport/choose-the-transport/
-        return await TransportU2f.create();
+        try {
+            return await TransportU2f.create();
+        } catch (error) {
+            console.error("Failed to create HID transport:", error);
+        }
+
+        throw Error('Failed to initialize provider');
     }
 
     async isLedgerTransportSupported(): Promise<boolean> {
@@ -82,11 +111,7 @@ export class HWProvider {
         // WebBLE is supported on Android and Desktop
         // but Ledger does not support pairing with desktop devices yet
         // https://support.ledger.com/hc/en-us/articles/360019138694-Set-up-Bluetooth-connection?docs=true
-        return await TransportWebBLE.isSupported() && this.isAndroid();
-    }
-
-    isAndroid(): boolean {
-        return window.navigator?.userAgent?.toLowerCase().includes('android');
+        return await TransportWebBLE.isSupported();
     }
 
     async isWebUSBSupported(): Promise<boolean> {
@@ -105,7 +130,7 @@ export class HWProvider {
      * Returns true if init() was previously called successfully
      */
     isInitialized(): boolean {
-        return !!this.hwApp;
+        return !!this.hwApp && !!this._transport;
     }
 
     /**

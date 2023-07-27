@@ -40,35 +40,14 @@ describe("test hwProvider", () => {
         }
     });
 
-    it("should not support Bluetooth API on iOS", async () => {
+    it("should support Bluetooth API", async () => {
         Object.assign(global, {
             window: {
                 navigator: {
-                    userAgent: 'iOS',
-                    bluetooth: {}
-                },
-            },
-            navigator: {
-                userAgent: 'iOS',
-                bluetooth: {}
-            },
-        });
-
-        const isSupported = await hwProvider.isLedgerTransportSupported();
-
-        assert.isFalse(isSupported);
-    });
-
-    it("should support Bluetooth API on Android", async () => {
-        Object.assign(global, {
-            window: {
-                navigator: {
-                    userAgent: 'Android',
                     bluetooth: {}
                 }
             },
             navigator: {
-                userAgent: 'Android',
                 bluetooth: {}
             }
         });
