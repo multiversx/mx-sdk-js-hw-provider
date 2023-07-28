@@ -1,5 +1,4 @@
 import Transport from "@ledgerhq/hw-transport";
-import TransportU2f from "@ledgerhq/hw-transport-u2f";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
@@ -93,24 +92,21 @@ export class HWProvider {
 
         // Deprecated: Use WebHID instead
         // https://developers.ledger.com/docs/transport/choose-the-transport/
-        try {
-            return await TransportU2f.create();
-        } catch (error) {
-            console.error("Failed to create HID transport:", error);
-        }
+        // try {
+        //     return await TransportU2f.create();
+        // } catch (error) {
+        //     console.error("Failed to create HID transport:", error);
+        // }
 
         throw Error('Failed to initialize provider');
     }
 
     async isLedgerTransportSupported(): Promise<boolean> {
-        return await this.isBLESupported() || await this.isWebUSBSupported() || await this.isWebHIDSupported() || await this.isU2FSupported();
+        return await this.isBLESupported() || await this.isWebUSBSupported() || await this.isWebHIDSupported();
 
     }
 
     async isBLESupported(): Promise<boolean> {
-        // WebBLE is supported on Android and Desktop
-        // but Ledger does not support pairing with desktop devices yet
-        // https://support.ledger.com/hc/en-us/articles/360019138694-Set-up-Bluetooth-connection?docs=true
         return await TransportWebBLE.isSupported();
     }
 
@@ -122,22 +118,36 @@ export class HWProvider {
         return await TransportWebHID.isSupported();
     }
 
-    // U2F is deprecated. Use only BLE, USB, or HID
-    async isU2FSupported(): Promise<boolean> {
-        return await TransportU2f.isSupported();
-    }
     /**
      * Returns true if init() was previously called successfully
      */
     isInitialized(): boolean {
-        return !!this.hwApp && !!this._transport;
+        return Boolean(this.hwApp && this._transport);
     }
 
     /**
      * Mocked function, returns isInitialized as an async function
      */
     isConnected(): Promise<boolean> {
-        return new Promise((resolve, _) => resolve(this.isInitialized()));
+        return new Promise((resolve) => {
+            if (!this.isInitialized()) {
+                return resolve(false);
+            }
+
+            const bluetoothTransport = this._transport as TransportWebBLE;
+
+            if (bluetoothTransport && bluetoothTransport.device.gatt) {
+                return resolve(bluetoothTransport.device.gatt.connected);
+            }
+
+            const usbTransport = this._transport as TransportWebUSB;
+
+            if (usbTransport) {
+                return resolve(usbTransport.device.opened);
+            }
+
+            return resolve(true);
+        });
     }
 
     /**
