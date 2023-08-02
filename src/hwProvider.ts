@@ -1,19 +1,26 @@
 import Transport from "@ledgerhq/hw-transport";
+import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
-import LedgerApp from "./ledgerApp";
-import platform from "platform";
 
-import { SignableMessage, Transaction } from "@multiversx/sdk-core";
-import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
-import { ErrNotInitialized } from "./errors";
-import { IHWWalletApp } from "./interface";
-import { compareVersions } from "./versioning";
+import {SignableMessage, Transaction} from "@multiversx/sdk-core";
+import {
+    LEDGER_TX_GUARDIAN_MIN_VERSION,
+    LEDGER_TX_HASH_SIGN_MIN_VERSION,
+    TRANSACTION_OPTIONS_TX_GUARDED,
+    TRANSACTION_OPTIONS_TX_HASH_SIGN,
+    TRANSACTION_VERSION_WITH_OPTIONS
+} from "./constants";
+import {ErrNotInitialized} from "./errors";
+import {IHWWalletApp} from "./interface";
+import LedgerApp from "./ledgerApp";
+import {TransportTypeEnum} from "./transportType.enum";
+import {compareVersions} from "./versioning";
 
 export class HWProvider {
     private _addressIndex = 0;
     private _transport: Transport | undefined;
+    private _transportType: TransportTypeEnum | undefined;
 
     constructor(
         private _hwApp?: IHWWalletApp
@@ -37,10 +44,7 @@ export class HWProvider {
 
         try {
             this._transport = await this.getTransport();
-
-            if (this._transport) {
-                this._hwApp = new LedgerApp(this._transport);
-            }
+            this._hwApp = new LedgerApp(this._transport);
 
             return this.isInitialized();
         } catch (error) {
@@ -49,7 +53,7 @@ export class HWProvider {
         }
     }
 
-    async getTransport(): Promise<Transport | undefined> {
+    async getTransport(): Promise<Transport> {
         if (this._transport) {
             return this._transport;
         }
@@ -64,6 +68,9 @@ export class HWProvider {
             const webUSBSupported = await this.isWebUSBSupported();
 
             if (webUSBSupported) {
+                console.log('Web USB Transport selected');
+                this._transportType = TransportTypeEnum.USB;
+
                 return await TransportWebUSB.create();
             }
         } catch (error) {
@@ -74,6 +81,9 @@ export class HWProvider {
             const webBLESupported = await this.isBLESupported();
 
             if (webBLESupported) {
+                console.log('Web BLE Transport selected');
+                this._transportType = TransportTypeEnum.BLE;
+
                return await TransportWebBLE.create();
             }
         } catch (error) {
@@ -84,19 +94,14 @@ export class HWProvider {
             const webHIDSupported = await this.isWebHIDSupported();
 
             if (webHIDSupported) {
-                 return await TransportWebHID.create();
+                console.log('Web HID Transport selected');
+                this._transportType = TransportTypeEnum.HID;
+
+                return await TransportWebHID.create();
             }
         } catch (error) {
             console.error("Failed to create HID transport:", error);
         }
-
-        // Deprecated: Use WebHID instead
-        // https://developers.ledger.com/docs/transport/choose-the-transport/
-        // try {
-        //     return await TransportU2f.create();
-        // } catch (error) {
-        //     console.error("Failed to create HID transport:", error);
-        // }
 
         throw Error('Failed to initialize provider');
     }
@@ -111,7 +116,7 @@ export class HWProvider {
     }
 
     async isWebUSBSupported(): Promise<boolean> {
-        return await TransportWebUSB.isSupported() && platform.name !== "Opera";
+        return await TransportWebUSB.isSupported();
     }
 
     async isWebHIDSupported(): Promise<boolean> {
@@ -134,16 +139,12 @@ export class HWProvider {
                 return resolve(false);
             }
 
-            const bluetoothTransport = this._transport as TransportWebBLE;
-
-            if (bluetoothTransport && bluetoothTransport.device.gatt) {
-                return resolve(bluetoothTransport.device.gatt.connected);
+            if (this._transportType === TransportTypeEnum.USB)  {
+                return resolve((this._transport as TransportWebUSB).device.opened);
             }
 
-            const usbTransport = this._transport as TransportWebUSB;
-
-            if (usbTransport) {
-                return resolve(usbTransport.device.opened);
+            if (this._transportType === TransportTypeEnum.BLE)  {
+                return resolve((this._transport as TransportWebBLE).device.gatt.connected);
             }
 
             return resolve(true);
