@@ -1,10 +1,9 @@
 import Transport from "@ledgerhq/hw-transport";
-import TransportU2f from "@ledgerhq/hw-transport-u2f";
+import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 
 import { SignableMessage, Transaction } from "@multiversx/sdk-core";
-import platform from "platform";
 import {
     LEDGER_TX_GUARDIAN_MIN_VERSION,
     LEDGER_TX_HASH_SIGN_MIN_VERSION,
@@ -15,10 +14,13 @@ import {
 import { ErrNotInitialized } from "./errors";
 import { IHWWalletApp } from "./interface";
 import LedgerApp from "./ledgerApp";
+import { TransportType } from "./transport-type.enum";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
-    private _addressIndex: number = 0;
+    private _addressIndex = 0;
+    private _transport: Transport | undefined;
+    private _transportType: TransportType | undefined;
 
     constructor(
         private _hwApp?: IHWWalletApp
@@ -37,48 +39,131 @@ export class HWProvider {
      * Creates transport and initialises ledger app.
      */
     async init(): Promise<boolean> {
-        try {
-            const transport = await this.getTransport();
-            this._hwApp = new LedgerApp(transport);
-
+        if (this.isInitialized()) {
             return true;
+        }
+
+        try {
+            const { transport, transportType } = await this.getTransport();
+            this._transportType = transportType;
+            this._transport = transport;
+            this._hwApp = new LedgerApp(this._transport);
+
+            return this.isInitialized();
         } catch (error) {
             console.error("Provider initialization error", error);
             return false;
         }
     }
 
-
-    async getTransport(): Promise<Transport> {
-        let webUSBSupported = await TransportWebUSB.isSupported();
-        webUSBSupported =
-            webUSBSupported &&
-            platform.name !== "Opera";
-
-        if (webUSBSupported) {
-            return await TransportWebUSB.create();
+    async getTransport(): Promise<{ transport: Transport; transportType: TransportType }> {
+        if (this._transport && this._transportType) {
+            return {
+                transport: this._transport,
+                transportType: this._transportType
+            };
         }
 
-        let webHIDSupported = await TransportWebHID.isSupported();
-        if (webHIDSupported) {
-            return await TransportWebHID.open("");
+        const isLedgerSupported = await this.isLedgerTransportSupported();
+
+        if (!isLedgerSupported) {
+            throw Error("Ledger is not supported");
         }
 
-        return await TransportU2f.create();
+        try {
+            const webUSBSupported = await this.isWebUSBSupported();
+
+            if (webUSBSupported) {
+                console.log("Web USB Transport selected");
+                const transport = await TransportWebUSB.create();
+
+                return {
+                    transport,
+                    transportType: TransportType.USB
+                };
+            }
+        } catch (error) {
+            console.error("Failed to create USB transport:", error);
+        }
+
+        try {
+            const webBLESupported = await this.isBLESupported();
+
+            if (webBLESupported) {
+                console.log("Web BLE Transport selected");
+                const transport = await TransportWebBLE.create();
+
+                return {
+                    transport,
+                    transportType: TransportType.BLE
+                };
+            }
+        } catch (error) {
+            console.error("Failed to create BLE transport:", error);
+        }
+
+        try {
+            const webHIDSupported = await this.isWebHIDSupported();
+
+            if (webHIDSupported) {
+                console.log("Web HID Transport selected");
+                const transport = await TransportWebHID.create();
+
+                return {
+                    transport,
+                    transportType: TransportType.HID
+                };
+            }
+        } catch (error) {
+            console.error("Failed to create HID transport:", error);
+        }
+
+        throw Error("Failed to initialize provider");
+    }
+
+    async isLedgerTransportSupported(): Promise<boolean> {
+        return await this.isBLESupported() || await this.isWebUSBSupported() || await this.isWebHIDSupported();
+
+    }
+
+    async isBLESupported(): Promise<boolean> {
+        return await TransportWebBLE.isSupported();
+    }
+
+    async isWebUSBSupported(): Promise<boolean> {
+        return await TransportWebUSB.isSupported();
+    }
+
+    async isWebHIDSupported(): Promise<boolean> {
+        return await TransportWebHID.isSupported();
     }
 
     /**
      * Returns true if init() was previously called successfully
      */
     isInitialized(): boolean {
-        return !!this.hwApp;
+        return Boolean(this.hwApp && this._transport && this._transportType);
     }
 
     /**
      * Mocked function, returns isInitialized as an async function
      */
     isConnected(): Promise<boolean> {
-        return new Promise((resolve, _) => resolve(this.isInitialized()));
+        return new Promise((resolve) => {
+            if (!this.isInitialized()) {
+                return resolve(false);
+            }
+
+            if (this._transportType === TransportType.USB) {
+                return resolve((this._transport as TransportWebUSB).device.opened);
+            }
+
+            if (this._transportType === TransportType.BLE) {
+                return resolve((this._transport as TransportWebBLE).device.gatt.connected);
+            }
+
+            return resolve(true);
+        });
     }
 
     /**
@@ -91,6 +176,7 @@ export class HWProvider {
 
         await this.setAddressIndex(options.addressIndex);
         const { address } = await this.hwApp.getAddress(0, options.addressIndex, true);
+
         return address;
     }
 
@@ -107,13 +193,15 @@ export class HWProvider {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
-        const addresses = [];
 
+        const addresses = [];
         const startIndex = page * pageSize;
+
         for (let index = startIndex; index < startIndex + pageSize; index++) {
             const { address } = await this.hwApp.getAddress(0, index);
             addresses.push(address);
         }
+
         return addresses;
     }
 
@@ -137,6 +225,7 @@ export class HWProvider {
         }
 
         const { address } = await this.hwApp.getAddress(0, this._addressIndex);
+
         return address;
     }
 
@@ -146,13 +235,11 @@ export class HWProvider {
         }
 
         transaction = this.cloneTransaction(transaction);
-
         const appFeatures = await this.getAppFeatures();
         const appVersion = appFeatures.appVersion;
         const mustUseVersionWithOptions = appFeatures.mustUseVersionWithOptions;
         const mustUsingHash = appFeatures.mustSignUsingHash;
         const canUseGuardian = appFeatures.canUseGuardian;
-
         const inputOptions = transaction.getOptions().valueOf();
         const hasGuardianOption = inputOptions & TRANSACTION_OPTIONS_TX_GUARDED;
 
@@ -199,7 +286,6 @@ export class HWProvider {
         }
 
         message = this.cloneMessage(message);
-
         let serializedMessage = message.serializeForSigningRaw();
         let serializedMessageBuffer = Buffer.from(serializedMessage);
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);

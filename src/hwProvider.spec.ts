@@ -12,6 +12,93 @@ describe("test hwProvider", () => {
         hwProvider = new HWProvider(hwApp);
     });
 
+    it("should not support ledger when navigator is empty", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {}
+            },
+            navigator: {}
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isFalse(isSupported);
+    });
+
+    it("should throw error when ledger is not supported", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {}
+            },
+            navigator: {}
+        });
+
+        try {
+            await hwProvider.getTransport();
+            assert.fail("Ledger is not supported");
+        } catch (e) {
+            assert.equal(e.message, "Ledger is not supported");
+        }
+    });
+
+    it("should support Bluetooth API", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    bluetooth: {}
+                }
+            },
+            navigator: {
+                bluetooth: {}
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+
+        assert.isTrue(isSupported);
+    });
+
+    it("should support USB API", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    usb: {
+                        getDevices: () => true
+                    },
+                    platform: {
+                        name: ""
+                    }
+                }
+            },
+            navigator: {
+                usb: {
+                    getDevices: () => true
+                },
+                platform: {
+                    name: ""
+                }
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isTrue(isSupported);
+    });
+
+    it("should support HID", async () => {
+        Object.assign(global, {
+            window: {
+                navigator: {
+                    hid: {}
+                }
+            },
+            navigator: {
+                hid: {}
+            }
+        });
+
+        const isSupported = await hwProvider.isLedgerTransportSupported();
+        assert.isTrue(isSupported);
+    });
+
     it("should getAppFeatures", async () => {
         hwApp.version = "1.0.10";
         assert.isFalse((await (<any>hwProvider).getAppFeatures()).mustSignUsingHash);
