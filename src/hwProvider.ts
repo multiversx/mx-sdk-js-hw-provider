@@ -1,15 +1,20 @@
+import Transport from "@ledgerhq/hw-transport";
 import TransportU2f from "@ledgerhq/hw-transport-u2f";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import LedgerApp from "./ledgerApp";
-
-import Transport from "@ledgerhq/hw-transport";
-import platform from "platform";
 
 import { SignableMessage, Transaction } from "@multiversx/sdk-core";
-import { LEDGER_TX_GUARDIAN_MIN_VERSION, LEDGER_TX_HASH_SIGN_MIN_VERSION, TRANSACTION_OPTIONS_TX_GUARDED, TRANSACTION_OPTIONS_TX_HASH_SIGN, TRANSACTION_VERSION_WITH_OPTIONS } from "./constants";
+import platform from "platform";
+import {
+    LEDGER_TX_GUARDIAN_MIN_VERSION,
+    LEDGER_TX_HASH_SIGN_MIN_VERSION,
+    TRANSACTION_OPTIONS_TX_GUARDED,
+    TRANSACTION_OPTIONS_TX_HASH_SIGN,
+    TRANSACTION_VERSION_WITH_OPTIONS
+} from "./constants";
 import { ErrNotInitialized } from "./errors";
 import { IHWWalletApp } from "./interface";
+import LedgerApp from "./ledgerApp";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
@@ -17,7 +22,8 @@ export class HWProvider {
 
     constructor(
         private _hwApp?: IHWWalletApp
-    ) {}
+    ) {
+    }
 
     public get addressIndex(): number {
         return this._addressIndex;
@@ -41,6 +47,7 @@ export class HWProvider {
             return false;
         }
     }
+
 
     async getTransport(): Promise<Transport> {
         let webUSBSupported = await TransportWebUSB.isSupported();
@@ -206,7 +213,7 @@ export class HWProvider {
             message: message.message,
             address: message.address,
             signer: message.signer,
-            version: message.version,
+            version: message.version
         });
     }
 

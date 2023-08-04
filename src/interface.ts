@@ -6,23 +6,28 @@ export interface IHWWalletApp {
     ): Promise<{
         address: string;
     }>;
+
     setAddress(
         account: number,
         index: number,
-        display?: boolean,
+        display?: boolean
     ): Promise<any>;
+
     signTransaction(rawTx: Buffer, usingHash: boolean): Promise<string>;
+
     signMessage(rawMessage: Buffer): Promise<string>;
+
     getAppConfiguration(): Promise<{
         version: string;
         contractData: number;
         accountIndex: number;
         addressIndex: number;
     }>;
+
     getAddressAndSignAuthToken(
         account: number,
         index: number,
-        token: Buffer,
+        token: Buffer
     ): Promise<{
         address: string,
         signature: string,
