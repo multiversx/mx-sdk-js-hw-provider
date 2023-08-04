@@ -265,6 +265,10 @@ export class HWProvider {
         return transaction;
     }
 
+    private cloneTransaction(transaction: Transaction): Transaction {
+        return Transaction.fromPlainObject(transaction.toPlainObject());
+    }
+
     async signTransactions(transactions: Transaction[]): Promise<Transaction[]> {
         const signedTransactions = [];
 
@@ -290,6 +294,15 @@ export class HWProvider {
         return message;
     }
 
+    private cloneMessage(message: SignableMessage): SignableMessage {
+        return new SignableMessage({
+            message: message.message,
+            address: message.address,
+            signer: message.signer,
+            version: message.version
+        });
+    }
+
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: Buffer; address: string }> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
@@ -304,19 +317,6 @@ export class HWProvider {
             signature: Buffer.from(signature, "hex"),
             address
         };
-    }
-
-    private cloneTransaction(transaction: Transaction): Transaction {
-        return Transaction.fromPlainObject(transaction.toPlainObject());
-    }
-
-    private cloneMessage(message: SignableMessage): SignableMessage {
-        return new SignableMessage({
-            message: message.message,
-            address: message.address,
-            signer: message.signer,
-            version: message.version
-        });
     }
 
     private async getAppFeatures(): Promise<{
