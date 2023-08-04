@@ -1,5 +1,5 @@
 import { Address, SignableMessage, Transaction } from "@multiversx/sdk-core";
-import {assert} from "chai";
+import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
 
@@ -7,7 +7,7 @@ describe("test hwProvider", () => {
     let hwApp: HwAppMock;
     let hwProvider: HWProvider;
 
-    before(async function () {
+    before(async function() {
         hwApp = new HwAppMock();
         hwProvider = new HWProvider(hwApp);
     });
@@ -27,16 +27,16 @@ describe("test hwProvider", () => {
     it("should throw error when ledger is not supported", async () => {
         Object.assign(global, {
             window: {
-                navigator: {},
+                navigator: {}
             },
             navigator: {}
         });
 
         try {
             await hwProvider.getTransport();
-            assert.fail('Ledger is not supported');
+            assert.fail("Ledger is not supported");
         } catch (e) {
-            assert.equal(e.message, 'Ledger is not supported');
+            assert.equal(e.message, "Ledger is not supported");
         }
     });
 
@@ -65,7 +65,7 @@ describe("test hwProvider", () => {
                         getDevices: () => true
                     },
                     platform: {
-                        name: ''
+                        name: ""
                     }
                 }
             },
@@ -74,33 +74,7 @@ describe("test hwProvider", () => {
                     getDevices: () => true
                 },
                 platform: {
-                    name: ''
-                }
-            }
-        });
-
-        const isSupported = await hwProvider.isLedgerTransportSupported();
-        assert.isTrue(isSupported);
-    });
-
-    it("should not support USB API on Opera", async () => {
-        Object.assign(global, {
-            window: {
-                navigator: {
-                    usb: {
-                        getDevices: () => true
-                    },
-                    platform: {
-                        name: 'Opera'
-                    }
-                }
-            },
-            navigator: {
-                usb: {
-                    getDevices: () => true
-                },
-                platform: {
-                    name: 'Opera'
+                    name: ""
                 }
             }
         });

@@ -3,7 +3,7 @@ import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 
-import {SignableMessage, Transaction} from "@multiversx/sdk-core";
+import { SignableMessage, Transaction } from "@multiversx/sdk-core";
 import {
     LEDGER_TX_GUARDIAN_MIN_VERSION,
     LEDGER_TX_HASH_SIGN_MIN_VERSION,
@@ -11,20 +11,22 @@ import {
     TRANSACTION_OPTIONS_TX_HASH_SIGN,
     TRANSACTION_VERSION_WITH_OPTIONS
 } from "./constants";
-import {ErrNotInitialized} from "./errors";
-import {IHWWalletApp} from "./interface";
+import { ErrNotInitialized } from "./errors";
+import { IHWWalletApp } from "./interface";
 import LedgerApp from "./ledgerApp";
-import {TransportTypeEnum} from "./transportType.enum";
-import {compareVersions} from "./versioning";
+import { TransportType } from "./transport-type.enum";
+import { compareVersions } from "./versioning";
 
 export class HWProvider {
-    private _addressIndex = 0;
     private _transport: Transport | undefined;
-    private _transportType: TransportTypeEnum | undefined;
+    private _transportType: TransportType | undefined;
 
     constructor(
         private _hwApp?: IHWWalletApp
-    ) {}
+    ) {
+    }
+
+    private _addressIndex = 0;
 
     public get addressIndex(): number {
         return this._addressIndex;
@@ -43,7 +45,9 @@ export class HWProvider {
         }
 
         try {
-            this._transport = await this.getTransport();
+            const { transport, transportType } = await this.getTransport();
+            this._transportType = transportType;
+            this._transport = transport;
             this._hwApp = new LedgerApp(this._transport);
 
             return this.isInitialized();
@@ -53,9 +57,12 @@ export class HWProvider {
         }
     }
 
-    async getTransport(): Promise<Transport> {
-        if (this._transport) {
-            return this._transport;
+    async getTransport(): Promise<{ transport: Transport; transportType: TransportType }> {
+        if (this._transport && this._transportType) {
+            return {
+                transport: this._transport,
+                transportType: this._transportType
+            };
         }
 
         const isLedgerSupported = await this.isLedgerTransportSupported();
@@ -68,10 +75,13 @@ export class HWProvider {
             const webUSBSupported = await this.isWebUSBSupported();
 
             if (webUSBSupported) {
-                console.log('Web USB Transport selected');
-                this._transportType = TransportTypeEnum.USB;
+                console.log("Web USB Transport selected");
+                const transport = await TransportWebUSB.create();
 
-                return await TransportWebUSB.create();
+                return {
+                    transport,
+                    transportType: TransportType.USB
+                };
             }
         } catch (error) {
             console.error("Failed to create USB transport:", error);
@@ -81,10 +91,13 @@ export class HWProvider {
             const webBLESupported = await this.isBLESupported();
 
             if (webBLESupported) {
-                console.log('Web BLE Transport selected');
-                this._transportType = TransportTypeEnum.BLE;
+                console.log("Web BLE Transport selected");
+                const transport = await TransportWebBLE.create();
 
-               return await TransportWebBLE.create();
+                return {
+                    transport,
+                    transportType: TransportType.BLE
+                };
             }
         } catch (error) {
             console.error("Failed to create BLE transport:", error);
@@ -94,16 +107,19 @@ export class HWProvider {
             const webHIDSupported = await this.isWebHIDSupported();
 
             if (webHIDSupported) {
-                console.log('Web HID Transport selected');
-                this._transportType = TransportTypeEnum.HID;
+                console.log("Web HID Transport selected");
+                const transport = await TransportWebHID.create();
 
-                return await TransportWebHID.create();
+                return {
+                    transport,
+                    transportType: TransportType.HID
+                };
             }
         } catch (error) {
             console.error("Failed to create HID transport:", error);
         }
 
-        throw Error('Failed to initialize provider');
+        throw Error("Failed to initialize provider");
     }
 
     async isLedgerTransportSupported(): Promise<boolean> {
@@ -127,7 +143,7 @@ export class HWProvider {
      * Returns true if init() was previously called successfully
      */
     isInitialized(): boolean {
-        return Boolean(this.hwApp && this._transport);
+        return Boolean(this.hwApp && this._transport && this._transportType);
     }
 
     /**
@@ -139,11 +155,11 @@ export class HWProvider {
                 return resolve(false);
             }
 
-            if (this._transportType === TransportTypeEnum.USB)  {
+            if (this._transportType === TransportType.USB) {
                 return resolve((this._transport as TransportWebUSB).device.opened);
             }
 
-            if (this._transportType === TransportTypeEnum.BLE)  {
+            if (this._transportType === TransportType.BLE) {
                 return resolve((this._transport as TransportWebBLE).device.gatt.connected);
             }
 
@@ -161,6 +177,7 @@ export class HWProvider {
 
         await this.setAddressIndex(options.addressIndex);
         const { address } = await this.hwApp.getAddress(0, options.addressIndex, true);
+
         return address;
     }
 
@@ -177,13 +194,15 @@ export class HWProvider {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
-        const addresses = [];
 
+        const addresses = [];
         const startIndex = page * pageSize;
+
         for (let index = startIndex; index < startIndex + pageSize; index++) {
             const { address } = await this.hwApp.getAddress(0, index);
             addresses.push(address);
         }
+
         return addresses;
     }
 
@@ -207,6 +226,7 @@ export class HWProvider {
         }
 
         const { address } = await this.hwApp.getAddress(0, this._addressIndex);
+
         return address;
     }
 
@@ -216,13 +236,11 @@ export class HWProvider {
         }
 
         transaction = this.cloneTransaction(transaction);
-
         const appFeatures = await this.getAppFeatures();
         const appVersion = appFeatures.appVersion;
         const mustUseVersionWithOptions = appFeatures.mustUseVersionWithOptions;
         const mustUsingHash = appFeatures.mustSignUsingHash;
         const canUseGuardian = appFeatures.canUseGuardian;
-
         const inputOptions = transaction.getOptions().valueOf();
         const hasGuardianOption = inputOptions & TRANSACTION_OPTIONS_TX_GUARDED;
 
@@ -248,10 +266,6 @@ export class HWProvider {
         return transaction;
     }
 
-    private cloneTransaction(transaction: Transaction): Transaction {
-        return Transaction.fromPlainObject(transaction.toPlainObject());
-    }
-
     async signTransactions(transactions: Transaction[]): Promise<Transaction[]> {
         const signedTransactions = [];
 
@@ -269,22 +283,12 @@ export class HWProvider {
         }
 
         message = this.cloneMessage(message);
-
         let serializedMessage = message.serializeForSigningRaw();
         let serializedMessageBuffer = Buffer.from(serializedMessage);
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);
         message.applySignature(Buffer.from(signature, "hex"));
 
         return message;
-    }
-
-    private cloneMessage(message: SignableMessage): SignableMessage {
-        return new SignableMessage({
-            message: message.message,
-            address: message.address,
-            signer: message.signer,
-            version: message.version,
-        });
     }
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: Buffer; address: string }> {
@@ -301,6 +305,19 @@ export class HWProvider {
             signature: Buffer.from(signature, "hex"),
             address
         };
+    }
+
+    private cloneTransaction(transaction: Transaction): Transaction {
+        return Transaction.fromPlainObject(transaction.toPlainObject());
+    }
+
+    private cloneMessage(message: SignableMessage): SignableMessage {
+        return new SignableMessage({
+            message: message.message,
+            address: message.address,
+            signer: message.signer,
+            version: message.version
+        });
     }
 
     private async getAppFeatures(): Promise<{
