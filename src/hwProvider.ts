@@ -18,6 +18,7 @@ import { TransportType } from "./transport-type.enum";
 import { compareVersions } from "./versioning";
 
 export class HWProvider {
+    private _addressIndex = 0;
     private _transport: Transport | undefined;
     private _transportType: TransportType | undefined;
 
@@ -25,8 +26,6 @@ export class HWProvider {
         private _hwApp?: IHWWalletApp
     ) {
     }
-
-    private _addressIndex = 0;
 
     public get addressIndex(): number {
         return this._addressIndex;
