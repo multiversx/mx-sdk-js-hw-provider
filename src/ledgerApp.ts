@@ -11,7 +11,7 @@ const ACTIVE_SIGNERS = [
     SIGN_RAW_TX_INS,
     SIGN_HASH_TX_INS,
     SIGN_MESSAGE_INS,
-    GET_ADDRESS_AUTH_TOKEN_INS,
+    GET_ADDRESS_AUTH_TOKEN_INS
 ];
 
 export default class LedgerApp {
@@ -28,7 +28,7 @@ export default class LedgerApp {
                 "signMessage",
                 "getAppConfiguration",
                 "getAddressAndSignAuthToken",
-                "provideESDTInfo",
+                "provideESDTInfo"
             ],
             scrambleKey
         );
@@ -99,7 +99,7 @@ export default class LedgerApp {
         let splitRes = result.split("|");
         return {
             address: splitRes[0],
-            signature: splitRes[1],
+            signature: splitRes[1]
         };
     }
 
@@ -127,7 +127,7 @@ export default class LedgerApp {
             contractData: response[0],
             accountIndex: accountIndex,
             addressIndex: addressIndex,
-            version: `${response[3]}.${response[4]}.${response[5]}`,
+            version: `${response[3]}.${response[4]}.${response[5]}`
         };
     }
 
@@ -158,7 +158,7 @@ export default class LedgerApp {
                 ins: type,
                 p1: isFirst ? 0x00 : 0x80,
                 p2: 0x00,
-                data: Buffer.alloc(chunkSize),
+                data: Buffer.alloc(chunkSize)
             };
 
             message.copy(apdu.data, 0, offset, offset + chunkSize);
@@ -224,7 +224,7 @@ export default class LedgerApp {
             decimalsBuffer,
             chainIdLengthBuffer,
             chainIdBuffer,
-            signatureBuffer,
+            signatureBuffer
         ];
         return Buffer.concat(infoBuffer);
     }

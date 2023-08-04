@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import {compareVersions} from "./versioning";
+import { compareVersions } from "./versioning";
 
 describe("test for general use", () => {
     it("should calculate correctly", () => {
@@ -11,7 +11,7 @@ describe("test for general use", () => {
 });
 
 describe("test version comparison for ledger hash signing", () => {
-    const LEDGER_TX_HASH_SIGN_MIN_VERSION = '1.0.11';
+    const LEDGER_TX_HASH_SIGN_MIN_VERSION = "1.0.11";
     // ledger hash signing version = 1.0.11
     it("should not use hash signing", () => {
         assert.equal(-1, compareVersions("0.0.7", LEDGER_TX_HASH_SIGN_MIN_VERSION));

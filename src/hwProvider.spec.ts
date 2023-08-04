@@ -7,7 +7,7 @@ describe("test hwProvider", () => {
     let hwApp: HwAppMock;
     let hwProvider: HWProvider;
 
-    before(async function () {
+    before(async function() {
         hwApp = new HwAppMock();
         hwProvider = new HWProvider(hwApp);
     });
@@ -203,6 +203,6 @@ class HwAppMock implements IHWWalletApp {
         return {
             address: this.address,
             signature: this.authTokenSignature
-        }
+        };
     }
 }
