@@ -38,13 +38,13 @@ export class HWProvider {
     /**
      * Creates transport and initialises ledger app.
      */
-    async init(): Promise<boolean> {
+    async init(type?: TransportType): Promise<boolean> {
         if (this.isInitialized()) {
             return true;
         }
 
         try {
-            const { transport, transportType } = await this.getTransport();
+            const { transport, transportType } = await this.getTransport(type);
             this._transportType = transportType;
             this._transport = transport;
             this._hwApp = new LedgerApp(this._transport);
@@ -56,7 +56,7 @@ export class HWProvider {
         }
     }
 
-    async getTransport(): Promise<{ transport: Transport; transportType: TransportType }> {
+    async getTransport(type?: TransportType): Promise<{ transport: Transport; transportType: TransportType }> {
         if (this._transport && this._transportType) {
             return {
                 transport: this._transport,
@@ -70,6 +70,51 @@ export class HWProvider {
             throw Error("Ledger is not supported");
         }
 
+        if (type) {
+            const transport = await this.getTransportByType(type);
+
+            if (!transport) {
+                throw Error(`Failed to initialize provider type ${type}`);
+            }
+
+            return transport;
+        }
+
+        let transport = await this.getUSBTransport();
+
+        if (transport) {
+            return transport;
+        }
+
+        transport = await this.getBLETransport();
+
+        if (transport) {
+            return transport;
+        }
+
+        transport = await this.getHIDTransport();
+
+        if (transport) {
+            return transport;
+        }
+
+        throw Error("Failed to initialize provider");
+    }
+
+    async getTransportByType(type: TransportType): Promise<{ transport: Transport; transportType: TransportType } | null> {
+        switch (type) {
+            case TransportType.USB:
+                return this.getUSBTransport();
+            case TransportType.BLE:
+                return this.getBLETransport();
+            case TransportType.HID:
+                return this.getHIDTransport();
+            default:
+                throw Error("Transport type not supported");
+        }
+    }
+
+    async getUSBTransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
         try {
             const webUSBSupported = await this.isWebUSBSupported();
 
@@ -86,6 +131,10 @@ export class HWProvider {
             console.error("Failed to create USB transport:", error);
         }
 
+        return null;
+    }
+
+    async getBLETransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
         try {
             const webBLESupported = await this.isBLESupported();
 
@@ -99,9 +148,13 @@ export class HWProvider {
                 };
             }
         } catch (error) {
-            console.error("Failed to create BLE transport:", error);
+            console.error("Failed to create BLE transport: %s", error);
         }
 
+        return null;
+    }
+
+    async getHIDTransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
         try {
             const webHIDSupported = await this.isWebHIDSupported();
 
@@ -118,7 +171,7 @@ export class HWProvider {
             console.error("Failed to create HID transport:", error);
         }
 
-        throw Error("Failed to initialize provider");
+        return null;
     }
 
     async isLedgerTransportSupported(): Promise<boolean> {
