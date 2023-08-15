@@ -148,7 +148,7 @@ export class HWProvider {
                 };
             }
         } catch (error) {
-            console.error("Failed to create BLE transport: %s", error);
+            console.error("Failed to create BLE transport:", error);
         }
 
         return null;
