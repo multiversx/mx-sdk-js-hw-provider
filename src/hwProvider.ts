@@ -35,6 +35,10 @@ export class HWProvider {
         return this._hwApp;
     }
 
+    public get transportType(): TransportType | undefined {
+        return this._transportType;
+    }
+
     /**
      * Creates transport and initialises ledger app.
      */
