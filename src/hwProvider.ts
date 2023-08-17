@@ -117,7 +117,7 @@ export class HWProvider {
         throw new Error("Failed to initialize provider");
     }
 
-    async getTransportByType(type: TransportType): Promise<Transport | null> {
+    private async getTransportByType(type: TransportType): Promise<Transport | null> {
         switch (type) {
             case TransportType.USB:
                 return this.getUSBTransport();
