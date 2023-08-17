@@ -84,19 +84,19 @@ export class HWProvider {
             return transport;
         }
 
-        let transport = await this.getUSBTransport();
+        let transport = await this._getUSBTransport();
 
         if (transport) {
             return transport;
         }
 
-        transport = await this.getBLETransport();
+        transport = await this._getBLETransport();
 
         if (transport) {
             return transport;
         }
 
-        transport = await this.getHIDTransport();
+        transport = await this._getHIDTransport();
 
         if (transport) {
             return transport;
@@ -108,17 +108,17 @@ export class HWProvider {
     async getTransportByType(type: TransportType): Promise<{ transport: Transport; transportType: TransportType } | null> {
         switch (type) {
             case TransportType.USB:
-                return this.getUSBTransport();
+                return this._getUSBTransport();
             case TransportType.BLE:
-                return this.getBLETransport();
+                return this._getBLETransport();
             case TransportType.HID:
-                return this.getHIDTransport();
+                return this._getHIDTransport();
             default:
                 throw Error("Transport type not supported");
         }
     }
 
-    async getUSBTransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
+    private async _getUSBTransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
         try {
             const webUSBSupported = await this.isWebUSBSupported();
 
@@ -138,7 +138,7 @@ export class HWProvider {
         return null;
     }
 
-    async getBLETransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
+    private async _getBLETransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
         try {
             const webBLESupported = await this.isBLESupported();
 
@@ -158,7 +158,7 @@ export class HWProvider {
         return null;
     }
 
-    async getHIDTransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
+    private async _getHIDTransport(): Promise<{ transport: Transport; transportType: TransportType } | null> {
         try {
             const webHIDSupported = await this.isWebHIDSupported();
 
