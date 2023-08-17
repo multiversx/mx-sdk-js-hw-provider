@@ -35,16 +35,20 @@ export class HWProvider {
         return this._hwApp;
     }
 
+    public get transportType(): TransportType | undefined {
+        return this._transportType;
+    }
+
     /**
      * Creates transport and initialises ledger app.
      */
-    async init(): Promise<boolean> {
+    async init(type?: TransportType): Promise<boolean> {
         if (this.isInitialized()) {
             return true;
         }
 
         try {
-            const { transport, transportType } = await this.getTransport();
+            const { transport, transportType } = await this.getTransport(type);
             this._transportType = transportType;
             this._transport = transport;
             this._hwApp = new LedgerApp(this._transport);
@@ -56,7 +60,7 @@ export class HWProvider {
         }
     }
 
-    async getTransport(): Promise<{ transport: Transport; transportType: TransportType }> {
+    async getTransport(transportType?: TransportType): Promise<{ transport: Transport; transportType: TransportType }> {
         if (this._transport && this._transportType) {
             return {
                 transport: this._transport,
@@ -67,58 +71,111 @@ export class HWProvider {
         const isLedgerSupported = await this.isLedgerTransportSupported();
 
         if (!isLedgerSupported) {
-            throw Error("Ledger is not supported");
+            throw new Error("Ledger is not supported");
         }
 
+        if (transportType) {
+            const transport = await this.getTransportByType(transportType);
+
+            if (!transport) {
+                throw new Error(`Failed to initialize provider type ${transportType}`);
+            }
+
+            return {
+                transport,
+                transportType
+            };
+        }
+
+        let transport = await this.getUSBTransport();
+
+        if (transport) {
+            return {
+                transport,
+                transportType: TransportType.USB
+            };
+        }
+
+        transport = await this.getBLETransport();
+
+        if (transport) {
+            return {
+                transport,
+                transportType: TransportType.BLE
+            };
+        }
+
+        transport = await this.getHIDTransport();
+
+        if (transport) {
+            return {
+                transport,
+                transportType: TransportType.HID
+            };
+        }
+
+        throw new Error("Failed to initialize provider");
+    }
+
+    private async getTransportByType(type: TransportType): Promise<Transport | null> {
+        switch (type) {
+            case TransportType.USB:
+                return this.getUSBTransport();
+            case TransportType.BLE:
+                return this.getBLETransport();
+            case TransportType.HID:
+                return this.getHIDTransport();
+            default:
+                throw new Error("Transport type not supported");
+        }
+    }
+
+    private async getUSBTransport(): Promise<Transport | null> {
         try {
             const webUSBSupported = await this.isWebUSBSupported();
 
             if (webUSBSupported) {
                 console.log("Web USB Transport selected");
-                const transport = await TransportWebUSB.create();
 
-                return {
-                    transport,
-                    transportType: TransportType.USB
-                };
+                return await TransportWebUSB.create();
             }
         } catch (error) {
             console.error("Failed to create USB transport:", error);
         }
 
+        return null;
+    }
+
+    private async getBLETransport(): Promise<Transport | null> {
         try {
             const webBLESupported = await this.isBLESupported();
 
             if (webBLESupported) {
                 console.log("Web BLE Transport selected");
-                const transport = await TransportWebBLE.create();
 
-                return {
-                    transport,
-                    transportType: TransportType.BLE
-                };
+                return await TransportWebBLE.create();
             }
         } catch (error) {
             console.error("Failed to create BLE transport:", error);
         }
 
+        return null;
+    }
+
+    private async getHIDTransport(): Promise<Transport | null> {
         try {
             const webHIDSupported = await this.isWebHIDSupported();
 
             if (webHIDSupported) {
                 console.log("Web HID Transport selected");
-                const transport = await TransportWebHID.create();
 
-                return {
-                    transport,
-                    transportType: TransportType.HID
-                };
+                return await TransportWebHID.create();
             }
         } catch (error) {
             console.error("Failed to create HID transport:", error);
         }
 
-        throw Error("Failed to initialize provider");
+        return null;
     }
 
     async isLedgerTransportSupported(): Promise<boolean> {
