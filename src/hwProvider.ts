@@ -71,14 +71,14 @@ export class HWProvider {
         const isLedgerSupported = await this.isLedgerTransportSupported();
 
         if (!isLedgerSupported) {
-            throw Error("Ledger is not supported");
+            throw new Error("Ledger is not supported");
         }
 
         if (transportType) {
             const transport = await this.getTransportByType(transportType);
 
             if (!transport) {
-                throw Error(`Failed to initialize provider type ${transportType}`);
+                throw new Error(`Failed to initialize provider type ${transportType}`);
             }
 
             return {
@@ -114,7 +114,7 @@ export class HWProvider {
             };
         }
 
-        throw Error("Failed to initialize provider");
+        throw new Error("Failed to initialize provider");
     }
 
     async getTransportByType(type: TransportType): Promise<Transport | null> {
@@ -126,7 +126,7 @@ export class HWProvider {
             case TransportType.HID:
                 return this.getHIDTransport();
             default:
-                throw Error("Transport type not supported");
+                throw new Error("Transport type not supported");
         }
     }
 
