@@ -3,7 +3,7 @@ import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 
-import { SignableMessage, Transaction } from "@multiversx/sdk-core";
+import {Message, MessageComputer, SignableMessage, Transaction } from "@multiversx/sdk-core";
 import {
     LEDGER_TX_GUARDIAN_MIN_VERSION,
     LEDGER_TX_HASH_SIGN_MIN_VERSION,
@@ -16,11 +16,13 @@ import { IHWWalletApp } from "./interface";
 import LedgerApp from "./ledgerApp";
 import { TransportType } from "./transport-type.enum";
 import { compareVersions } from "./versioning";
+import {IDAppProviderAccount, IDAppProviderBase} from "@multiversx/sdk-dapp-utils/out/models/dappProviderBase";
 
-export class HWProvider {
+export class HWProvider implements IDAppProviderBase {
     private _addressIndex = 0;
     private _transport: Transport | undefined;
     private _transportType: TransportType | undefined;
+    private _account: IDAppProviderAccount = { address: '' };
 
     constructor(
         private _hwApp?: IHWWalletApp
@@ -205,28 +207,33 @@ export class HWProvider {
     /**
      * Mocked function, returns isInitialized as an async function
      */
-    isConnected(): Promise<boolean> {
-        return new Promise((resolve) => {
-            if (!this.isInitialized()) {
-                return resolve(false);
-            }
+    isConnected(): boolean {
+        if (!this.isInitialized()) {
+            return false;
+        }
 
-            if (this._transportType === TransportType.USB) {
-                return resolve((this._transport as TransportWebUSB).device.opened);
-            }
+        if (this._transportType === TransportType.USB) {
+            return (this._transport as TransportWebUSB).device.opened;
+        }
 
-            if (this._transportType === TransportType.BLE) {
-                return resolve((this._transport as TransportWebBLE).device.gatt.connected);
-            }
+        if (this._transportType === TransportType.BLE) {
+            return (this._transport as TransportWebBLE).device.gatt.connected;
+        }
 
-            return resolve(true);
-        });
+        return true;
+    }
+
+    /**
+     * Returns the current account if it exists
+     */
+    getAccount(): IDAppProviderAccount | null {
+        return this._account;
     }
 
     /**
      * Performs a login request by setting the selected index in Ledger and returning that address
      */
-    async login(options: { addressIndex: number } = { addressIndex: 0 }): Promise<string> {
+    async login(options: { addressIndex: number } = { addressIndex: 0 }): Promise<IDAppProviderAccount> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
@@ -234,7 +241,11 @@ export class HWProvider {
         await this.setAddressIndex(options.addressIndex);
         const { address } = await this.hwApp.getAddress(0, options.addressIndex, true);
 
-        return address;
+        this._account = {
+            address
+        };
+
+        return this._account;
     }
 
     async setAddressIndex(addressIndex: number): Promise<void> {
@@ -337,27 +348,22 @@ export class HWProvider {
         return signedTransactions;
     }
 
-    async signMessage(message: SignableMessage): Promise<SignableMessage> {
+    async signMessage(messageToSign: string): Promise<Message> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
-        message = this.cloneMessage(message);
-        let serializedMessage = message.serializeForSigningRaw();
+        const message = new Message({
+            data: Buffer.from(messageToSign),
+        });
+
+        const messageComputer = new MessageComputer();
+        const serializedMessage = messageComputer.computeBytesForSigning(message);
         let serializedMessageBuffer = Buffer.from(serializedMessage);
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);
-        message.applySignature(Buffer.from(signature, "hex"));
+        message.signature = Buffer.from(signature, "hex");
 
         return message;
-    }
-
-    private cloneMessage(message: SignableMessage): SignableMessage {
-        return new SignableMessage({
-            message: message.message,
-            address: message.address,
-            signer: message.signer,
-            version: message.version
-        });
     }
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: Buffer; address: string }> {
