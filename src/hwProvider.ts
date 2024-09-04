@@ -2,8 +2,7 @@ import Transport from "@ledgerhq/hw-transport";
 import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-
-import {Message, MessageComputer, SignableMessage, Transaction } from "@multiversx/sdk-core";
+import {Message, MessageComputer, Transaction } from "@multiversx/sdk-core";
 import {
     LEDGER_TX_GUARDIAN_MIN_VERSION,
     LEDGER_TX_HASH_SIGN_MIN_VERSION,
@@ -16,13 +15,17 @@ import { IHWWalletApp } from "./interface";
 import LedgerApp from "./ledgerApp";
 import { TransportType } from "./transport-type.enum";
 import { compareVersions } from "./versioning";
-import {IDAppProviderAccount, IDAppProviderBase} from "@multiversx/sdk-dapp-utils/out/models/dappProviderBase";
 
-export class HWProvider implements IDAppProviderBase {
+export interface IProviderAccount {
+    address: string;
+    signature?: string;
+}
+
+export class HWProvider {
     private _addressIndex = 0;
     private _transport: Transport | undefined;
     private _transportType: TransportType | undefined;
-    private _account: IDAppProviderAccount = { address: '' };
+    private _account: IProviderAccount = { address: '' };
 
     constructor(
         private _hwApp?: IHWWalletApp
@@ -226,14 +229,23 @@ export class HWProvider implements IDAppProviderBase {
     /**
      * Returns the current account if it exists
      */
-    getAccount(): IDAppProviderAccount | null {
+    getAccount(): IProviderAccount | null {
         return this._account;
+    }
+
+    /**
+     * Sets the current account
+     * @param account
+     * @returns void
+     */
+    setAccount(account: IProviderAccount) {
+        this._account = account;
     }
 
     /**
      * Performs a login request by setting the selected index in Ledger and returning that address
      */
-    async login(options: { addressIndex: number } = { addressIndex: 0 }): Promise<IDAppProviderAccount> {
+    async login(options: { addressIndex: number } = { addressIndex: 0 }): Promise<IProviderAccount> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
