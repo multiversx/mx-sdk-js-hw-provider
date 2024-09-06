@@ -15,6 +15,7 @@ import { IHWWalletApp } from "./interface";
 import LedgerApp from "./ledgerApp";
 import { TransportType } from "./transport-type.enum";
 import { compareVersions } from "./versioning";
+import {Address} from "@multiversx/sdk-core/out";
 
 export interface IProviderAccount {
     address: string;
@@ -360,13 +361,16 @@ export class HWProvider {
         return signedTransactions;
     }
 
-    async signMessage(messageToSign: string): Promise<Message> {
+    async signMessage(messageToSign: Message): Promise<Message> {
         if (!this.hwApp) {
             throw new ErrNotInitialized();
         }
 
         const message = new Message({
-            data: Buffer.from(messageToSign),
+            data: Buffer.from(messageToSign.data),
+            address: messageToSign.address ?? Address.fromBech32(this._account.address),
+            signer: messageToSign.signer,
+            version: messageToSign.version
         });
 
         const messageComputer = new MessageComputer();
