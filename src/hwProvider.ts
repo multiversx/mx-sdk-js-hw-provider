@@ -2,7 +2,7 @@ import Transport from "@ledgerhq/hw-transport";
 import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import {Message, MessageComputer, Transaction } from "@multiversx/sdk-core";
+import { Message, MessageComputer, Transaction } from "@multiversx/sdk-core";
 import {
     LEDGER_TX_GUARDIAN_MIN_VERSION,
     LEDGER_TX_HASH_SIGN_MIN_VERSION,

@@ -1,8 +1,8 @@
-import { Address, MessageComputer, SignableMessage, Transaction } from "@multiversx/sdk-core";
+import { Address, MessageComputer, Transaction } from "@multiversx/sdk-core";
 import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
-import {Message} from "@multiversx/sdk-core/out";
+import { Message } from "@multiversx/sdk-core";
 
 describe("test hwProvider", () => {
     let hwApp: HwAppMock;
