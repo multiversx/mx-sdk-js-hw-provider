@@ -1,4 +1,4 @@
-import { Address, SignableMessage, Transaction } from "@multiversx/sdk-core";
+import { Address, MessageComputer, Transaction, Message } from "@multiversx/sdk-core";
 import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
@@ -233,21 +233,24 @@ describe("test hwProvider", () => {
     });
 
     it("should signMessage", async () => {
-        const message = new SignableMessage({
-            message: Buffer.from("Hello World"),
+        const messageToSign = new Message({
+            data: Buffer.from("Hello World"),
             address: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
             version: 42
         });
 
+        const messageComputer = new MessageComputer();
+        const serializedMessage = messageComputer.computeBytesForSigning(messageToSign);
+
         hwApp.messageSignature = "abba";
 
-        const signedMessage = await hwProvider.signMessage(message);
+        const signedMessage = await hwProvider.signMessage(messageToSign);
 
-        assert.equal(signedMessage.message.toString(), "Hello World");
-        assert.equal(signedMessage.address.toString(), "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th");
+        assert.equal(Buffer.from(signedMessage.data).toString(), "Hello World");
+        assert.equal(signedMessage.address?.toString(), "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th");
         assert.equal(signedMessage.version, 42);
-        assert.equal(signedMessage.getSignature().toString("hex"), "abba");
-        assert.deepEqual(message.serializeForSigning(), signedMessage.serializeForSigning());
+        assert.equal(Buffer.from(signedMessage.signature!).toString("hex"), "abba");
+        assert.deepEqual(serializedMessage, messageComputer.computeBytesForSigning(signedMessage));
     });
 });
 

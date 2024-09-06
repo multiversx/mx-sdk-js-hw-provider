@@ -17,7 +17,8 @@
         "noFallthroughCasesInSwitch": true,
         "noUnusedParameters": true,
         "esModuleInterop": true,
-        "declaration": true
+        "declaration": true,
+        "useUnknownInCatchVariables": false
     },
     "include": [
         "src/**/*"
