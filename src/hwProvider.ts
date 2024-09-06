@@ -369,7 +369,7 @@ export class HWProvider {
         const message = new Message({
             data: Buffer.from(messageToSign.data),
             address: messageToSign.address ?? Address.fromBech32(this._account.address),
-            signer: messageToSign.signer,
+            signer: 'ledger',
             version: messageToSign.version
         });
 
