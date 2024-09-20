@@ -2,7 +2,7 @@ import Transport from "@ledgerhq/hw-transport";
 import TransportWebBLE from "@ledgerhq/hw-transport-web-ble";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import { Message, MessageComputer, Transaction, Address } from "@multiversx/sdk-core";
+import { Message, Transaction, Address } from "@multiversx/sdk-core";
 import {
     LEDGER_TX_GUARDIAN_MIN_VERSION,
     LEDGER_TX_HASH_SIGN_MIN_VERSION,
@@ -372,14 +372,27 @@ export class HWProvider {
             version: messageToSign.version
         });
 
-        const messageComputer = new MessageComputer();
-        const serializedMessage = messageComputer.computeBytesForSigning(message);
-        let serializedMessageBuffer = Buffer.from(serializedMessage);
+        const messageSize = this.getMessageSize(messageToSign);
+
+        const serializedMessageBuffer = Buffer.concat([
+            messageSize,
+            Buffer.from(messageToSign.data)
+        ]);
+
         const signature = await this.hwApp.signMessage(serializedMessageBuffer);
+
         message.signature = Buffer.from(signature, "hex");
 
         return message;
     }
+
+    private getMessageSize(message: Message): Buffer {
+        const messageSize = Buffer.alloc(4);
+        messageSize.writeUInt32BE(message.data.length, 0);
+        
+        return messageSize;
+    }
+
 
     async tokenLogin(options: { token: Buffer, addressIndex?: number }): Promise<{ signature: Buffer; address: string }> {
         if (!this.hwApp) {
