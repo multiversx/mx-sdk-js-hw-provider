@@ -8,7 +8,8 @@ import {
     LEDGER_TX_HASH_SIGN_MIN_VERSION,
     TRANSACTION_OPTIONS_TX_GUARDED,
     TRANSACTION_OPTIONS_TX_HASH_SIGN,
-    TRANSACTION_VERSION_WITH_OPTIONS
+    TRANSACTION_VERSION_WITH_OPTIONS,
+    SIGNER
 } from "./constants";
 import { ErrNotInitialized } from "./errors";
 import { IHWWalletApp } from "./interface";
@@ -368,7 +369,7 @@ export class HWProvider {
         const message = new Message({
             data: Buffer.from(messageToSign.data),
             address: messageToSign.address ?? Address.fromBech32(this._account.address),
-            signer: 'ledger',
+            signer: SIGNER,
             version: messageToSign.version
         });
 
