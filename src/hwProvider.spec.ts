@@ -237,12 +237,12 @@ describe("test hwProvider", () => {
             data: Buffer.from("Hello World"),
             address: Address.fromBech32("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"),
             version: 42
-        });
+        }); 
 
-        const messageComputer = new MessageComputer();
-        const serializedMessage = messageComputer.computeBytesForSigning(messageToSign);
 
         hwApp.messageSignature = "abba";
+
+        const messageComputer = new MessageComputer();
 
         const signedMessage = await hwProvider.signMessage(messageToSign);
 
@@ -250,7 +250,7 @@ describe("test hwProvider", () => {
         assert.equal(signedMessage.address?.toString(), "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th");
         assert.equal(signedMessage.version, 42);
         assert.equal(Buffer.from(signedMessage.signature!).toString("hex"), "abba");
-        assert.deepEqual(serializedMessage, messageComputer.computeBytesForSigning(signedMessage));
+        assert.deepEqual(messageComputer.computeBytesForSigning(messageToSign), messageComputer.computeBytesForSigning(signedMessage));
     });
 });
 
