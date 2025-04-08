@@ -50,7 +50,9 @@ export default class LedgerApp {
         const response = await this.transport.send(CLA, ins, p1, p2, data);
 
         const addressLength = response[0];
-        const address = Buffer.from(response.subarray(1, 1 + addressLength)).toString("ascii");
+        const address = Buffer.from(
+            response.subarray(1, 1 + addressLength)
+        ).toString("ascii");
         return { address };
     }
 
@@ -119,7 +121,8 @@ export default class LedgerApp {
         const response = await this.transport.send(0xed, 0x02, 0x00, 0x00);
         let accountIndex = 0;
         let addressIndex = 0;
-        if (response.length === 14) { // check if the response if from a version newer than 1.0.16
+        if (response.length === 14) {
+            // check if the response if from a version newer than 1.0.16
             accountIndex = this.getIntValueFromBytes(response.slice(6, 10));
             addressIndex = this.getIntValueFromBytes(response.slice(10, 14));
         }
@@ -132,10 +135,12 @@ export default class LedgerApp {
     }
 
     getIntValueFromBytes(buffer: Buffer) {
-        return ((buffer[buffer.length - 1]) |
+        return (
+            buffer[buffer.length - 1] |
             (buffer[buffer.length - 2] << 8) |
             (buffer[buffer.length - 3] << 16) |
-            (buffer[buffer.length - 4] << 24));
+            (buffer[buffer.length - 4] << 24)
+        );
     }
 
     async sign(message: Buffer, type: number): Promise<string> {
@@ -197,7 +202,9 @@ export default class LedgerApp {
         }
 
         const address = response.slice(1, 63).toString("ascii");
-        const signature = response.slice(63, response.length - 2).toString("hex");
+        const signature = response
+            .slice(63, response.length - 2)
+            .toString("hex");
         return address + "|" + signature;
     }
 
@@ -216,7 +223,7 @@ export default class LedgerApp {
         const chainIdLengthBuffer = Buffer.from([chainId.length]);
         const chainIdBuffer = Buffer.from(chainId);
         const signatureBuffer = Buffer.from(signature, "hex");
-        let infoBuffer = [
+        const infoBuffer = [
             tickerLengthBuffer,
             tickerBuffer,
             idLengthBuffer,
