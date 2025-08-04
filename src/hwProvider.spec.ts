@@ -222,10 +222,10 @@ describe("test hwProvider", () => {
         hwApp.transactionSignatures = [options.transactionSignature];
 
         const transaction = new Transaction({
-            sender: Address.fromBech32(
+            sender: Address.newFromBech32(
                 "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"
             ),
-            receiver: Address.fromBech32(
+            receiver: Address.newFromBech32(
                 "erd1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqzu66jx"
             ),
             gasLimit: BigInt(123456),
@@ -237,25 +237,25 @@ describe("test hwProvider", () => {
         const signedTransaction = await hwProvider.signTransaction(transaction);
 
         assert.equal(
-            signedTransaction.getSignature().toString("hex"),
+            Buffer.from(signedTransaction.signature).toString("hex"),
             options.transactionSignature
         );
         assert.equal(
-            signedTransaction.getVersion().valueOf(),
+            signedTransaction.version,
             options.expectedTransactionVersion
         );
         assert.equal(
-            signedTransaction.getOptions().valueOf(),
+            signedTransaction.options,
             options.expectedTransactionOptions
         );
     }
 
     it("should signTransactions", async () => {
         const txA = new Transaction({
-            sender: Address.fromBech32(
+            sender: Address.newFromBech32(
                 "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"
             ),
-            receiver: Address.fromBech32(
+            receiver: Address.newFromBech32(
                 "erd1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqzu66jx"
             ),
             gasLimit: BigInt(123456),
@@ -293,7 +293,7 @@ describe("test hwProvider", () => {
     it("should signMessage", async () => {
         const messageToSign = new Message({
             data: Buffer.from("Hello World"),
-            address: Address.fromBech32(
+            address: Address.newFromBech32(
                 "erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th"
             ),
             version: 42
