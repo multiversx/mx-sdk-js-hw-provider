@@ -1,9 +1,10 @@
+import { Address } from "@multiversx/sdk-core/out/core/address";
 import {
-    Address,
     Message,
-    MessageComputer,
-    Transaction
-} from "@multiversx/sdk-core";
+    MessageComputer
+} from "@multiversx/sdk-core/out/core/message";
+import { Transaction } from "@multiversx/sdk-core/out/core/transaction";
+
 import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
