@@ -9,6 +9,15 @@ import { assert } from "chai";
 import { HWProvider } from "./hwProvider";
 import { IHWWalletApp } from "./interface";
 
+// `navigator` is a read-only getter
+function setNavigator(value: any) {
+    Object.defineProperty(global, "navigator", {
+        value,
+        configurable: true,
+        writable: true
+    });
+}
+
 describe("test hwProvider", () => {
     let hwApp: HwAppMock;
     let hwProvider: HWProvider;
@@ -22,9 +31,9 @@ describe("test hwProvider", () => {
         Object.assign(global, {
             window: {
                 navigator: {}
-            },
-            navigator: {}
+            }
         });
+        setNavigator({});
 
         const isSupported = await hwProvider.isLedgerTransportSupported();
         assert.isFalse(isSupported);
@@ -34,9 +43,9 @@ describe("test hwProvider", () => {
         Object.assign(global, {
             window: {
                 navigator: {}
-            },
-            navigator: {}
+            }
         });
+        setNavigator({});
 
         try {
             await hwProvider.getTransport();
@@ -52,10 +61,10 @@ describe("test hwProvider", () => {
                 navigator: {
                     bluetooth: {}
                 }
-            },
-            navigator: {
-                bluetooth: {}
             }
+        });
+        setNavigator({
+            bluetooth: {}
         });
 
         const isSupported = await hwProvider.isLedgerTransportSupported();
@@ -74,14 +83,14 @@ describe("test hwProvider", () => {
                         name: ""
                     }
                 }
+            }
+        });
+        setNavigator({
+            usb: {
+                getDevices: () => true
             },
-            navigator: {
-                usb: {
-                    getDevices: () => true
-                },
-                platform: {
-                    name: ""
-                }
+            platform: {
+                name: ""
             }
         });
 
@@ -95,10 +104,10 @@ describe("test hwProvider", () => {
                 navigator: {
                     hid: {}
                 }
-            },
-            navigator: {
-                hid: {}
             }
+        });
+        setNavigator({
+            hid: {}
         });
 
         const isSupported = await hwProvider.isLedgerTransportSupported();
@@ -108,50 +117,50 @@ describe("test hwProvider", () => {
     it("should getAppFeatures", async () => {
         hwApp.version = "1.0.10";
         assert.isFalse(
-            (await (<any>hwProvider).getAppFeatures()).mustSignUsingHash
+            (await (hwProvider as any).getAppFeatures()).mustSignUsingHash
         );
         assert.isFalse(
-            (await (<any>hwProvider).getAppFeatures()).canUseGuardian
+            (await (hwProvider as any).getAppFeatures()).canUseGuardian
         );
 
         hwApp.version = "1.0.11";
         assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).mustSignUsingHash
+            (await (hwProvider as any).getAppFeatures()).mustSignUsingHash
         );
         assert.isFalse(
-            (await (<any>hwProvider).getAppFeatures()).canUseGuardian
+            (await (hwProvider as any).getAppFeatures()).canUseGuardian
         );
 
         hwApp.version = "1.0.21";
         assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).mustSignUsingHash
+            (await (hwProvider as any).getAppFeatures()).mustSignUsingHash
         );
         assert.isFalse(
-            (await (<any>hwProvider).getAppFeatures()).canUseGuardian
+            (await (hwProvider as any).getAppFeatures()).canUseGuardian
         );
 
         hwApp.version = "1.0.22";
         assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).mustSignUsingHash
+            (await (hwProvider as any).getAppFeatures()).mustSignUsingHash
         );
         assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).canUseGuardian
-        );
-
-        hwApp.version = "1.1.0";
-        assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).mustSignUsingHash
-        );
-        assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).canUseGuardian
+            (await (hwProvider as any).getAppFeatures()).canUseGuardian
         );
 
         hwApp.version = "1.1.0";
         assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).mustSignUsingHash
+            (await (hwProvider as any).getAppFeatures()).mustSignUsingHash
         );
         assert.isTrue(
-            (await (<any>hwProvider).getAppFeatures()).canUseGuardian
+            (await (hwProvider as any).getAppFeatures()).canUseGuardian
+        );
+
+        hwApp.version = "1.1.0";
+        assert.isTrue(
+            (await (hwProvider as any).getAppFeatures()).mustSignUsingHash
+        );
+        assert.isTrue(
+            (await (hwProvider as any).getAppFeatures()).canUseGuardian
         );
     });
 
