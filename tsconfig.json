@@ -2,7 +2,9 @@
     "compilerOptions": {
         "module": "CommonJS",
         "target": "es2015",
+        "rootDir": "src",
         "outDir": "out",
+        "types": ["node", "mocha"],
         "lib": [
             "ES2015",
             "DOM"
