@@ -167,7 +167,7 @@ export default class LedgerApp {
             offset += chunkSize;
         }
 
-        let response = Buffer.alloc(0);
+        let response: Buffer = Buffer.alloc(0);
         for (let apdu of apdus) {
             response = await this.transport.send(
                 apdu.cla,
